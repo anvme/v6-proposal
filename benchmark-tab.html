@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Tab JS vs Native &lt;details name=""&gt;</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    /* Native <details> styled as Bootstrap horizontal tabs */
+    .native-tab-group {
+      position: relative;
+      border-bottom: 1px solid var(--bs-nav-tabs-border-color, #dee2e6);
+      font-size: 0; /* remove inline-block whitespace gaps */
+      margin-bottom: 3.5rem; /* space for absolutely positioned panel */
+    }
+    .native-tab-group details {
+      display: inline-block;
+      vertical-align: bottom;
+      font-size: 1rem;
+    }
+    .native-tab-group summary {
+      list-style: none;
+      cursor: pointer;
+      padding: .5rem 1rem;
+      color: var(--bs-link-color, #0d6efd);
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-top-left-radius: .375rem;
+      border-top-right-radius: .375rem;
+      margin-bottom: -1px;
+    }
+    .native-tab-group summary::-webkit-details-marker {
+      display: none;
+    }
+    .native-tab-group summary:hover {
+      border-color: var(--bs-nav-tabs-link-hover-border-color, #e9ecef #e9ecef #dee2e6);
+      isolation: isolate;
+    }
+    .native-tab-group details[open] > summary {
+      color: var(--bs-nav-tabs-link-active-color, #495057);
+      background-color: var(--bs-nav-tabs-link-active-bg, #fff);
+      border-color: var(--bs-nav-tabs-link-active-border-color, #dee2e6 #dee2e6 #fff);
+      position: relative;
+      z-index: 1;
+    }
+    .native-tab-group .native-tab-panel {
+      position: absolute;
+      top: calc(100% + 1px);
+      left: 0;
+      right: 0;
+      border: 1px solid #dee2e6;
+      border-top: 0;
+      border-radius: 0 0 .375rem .375rem;
+      padding: 1rem;
+      background: var(--bs-body-bg, #fff);
+    }
+    /* Small benchmark items (both sides) */
+    .tab-group-sm .nav-link,
+    .tab-group-sm .tab-pane,
+    .tab-group-sm .tab-content {
+      font-size: .75rem;
+    }
+    .tab-group-sm .nav-link {
+      padding: .25rem .5rem;
+    }
+    .tab-group-sm .tab-content {
+      padding: .5rem;
+    }
+    .native-tab-group-sm {
+      margin-bottom: 2.25rem;
+    }
+    .native-tab-group-sm details {
+      font-size: .75rem;
+    }
+    .native-tab-group-sm summary {
+      padding: .25rem .5rem;
+    }
+    .native-tab-group-sm .native-tab-panel {
+      padding: .5rem;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Tab Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Tab JS (panel switcher + ARIA + keyboard nav + 43 KB infra) vs Native <code>&lt;details name=""&gt;</code> exclusive accordion</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 20 tab groups with 4 panels each (80 panels total).
+        The benchmark creates Bootstrap Tab instances (init cost), then switches through all 4 tabs in each group
+        for 100 cycles (8,000 switch operations per section). DOM mutations
+        are counted via <code>MutationObserver</code>. CSS transitions are disabled during the run
+        so we measure raw JS overhead, not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/mdn-html_elements_details_name" target="_blank" class="badge text-bg-secondary text-decoration-none">&lt;details name=""&gt;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Tab</code> &mdash; manages <code>.active</code> classes, fires <code>show</code>/<code>shown</code>/<code>hide</code>/<code>hidden</code> events, handles keyboard navigation (arrow keys), ARIA attributes. Requires 8 JS dependency files (43 KB).</p>
+          <!-- BS Tab Preview -->
+          <ul class="nav nav-tabs" id="preview-bs-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="preview-home-tab" data-bs-toggle="tab" data-bs-target="#preview-home" type="button" role="tab" aria-controls="preview-home" aria-selected="true">Home</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="preview-profile-tab" data-bs-toggle="tab" data-bs-target="#preview-profile" type="button" role="tab" aria-controls="preview-profile" aria-selected="false">Profile</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="preview-contact-tab" data-bs-toggle="tab" data-bs-target="#preview-contact" type="button" role="tab" aria-controls="preview-contact" aria-selected="false">Contact</button>
+            </li>
+          </ul>
+          <div class="tab-content border border-top-0 rounded-bottom p-3">
+            <div class="tab-pane active" id="preview-home" role="tabpanel" aria-labelledby="preview-home-tab">Home panel content.</div>
+            <div class="tab-pane" id="preview-profile" role="tabpanel" aria-labelledby="preview-profile-tab">Profile panel content.</div>
+            <div class="tab-pane" id="preview-contact" role="tabpanel" aria-labelledby="preview-contact-tab">Contact panel content.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>&lt;details name=""&gt;</code> &mdash; only one open at a time per group, browser closes others automatically. Built-in keyboard support (Enter/Space). Zero initialization, zero framework JS.</p>
+          <!-- Native Details Preview (styled as Bootstrap tabs) -->
+          <div class="native-tab-group">
+            <details name="preview-native" open>
+              <summary>Home</summary>
+              <div class="native-tab-panel">Home panel content.</div>
+            </details>
+            <details name="preview-native">
+              <summary>Profile</summary>
+              <div class="native-tab-panel">Profile panel content.</div>
+            </details>
+            <details name="preview-native">
+              <summary>Contact</summary>
+              <div class="native-tab-panel">Contact panel content.</div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Tab</th>
+              <th style="width: 35%;">Native &lt;details&gt;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (20 groups &times; 4 tabs)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Switch time (100 cycles &times; 20 groups &times; 4 tabs)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">DOM mutations (100 cycles &times; 20 groups &times; 4 tabs)</td>
+              <td class="font-monospace fw-semibold" id="res-dom-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-dom-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (80 tab instances)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/tab.js" target="_blank">tab.js</a> <span class="text-body-tertiary">(10.2 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/base-component.js" target="_blank">base-component</a> <span class="text-body-tertiary">(2.8 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/event-handler.js" target="_blank">event-handler</a> <span class="text-body-tertiary">(9.2 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/selector-engine.js" target="_blank">selector-engine</a> <span class="text-body-tertiary">(4.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/data.js" target="_blank">data</a> <span class="text-body-tertiary">(2.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/manipulator.js" target="_blank">manipulator</a> <span class="text-body-tertiary">(2.3 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/index.js" target="_blank">util</a> <span class="text-body-tertiary">(9.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/config.js" target="_blank">config</a> <span class="text-body-tertiary">(2.5 KB)</span>
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Test Items -->
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">20 groups &times; 4 tabs &mdash; <code>bootstrap.Tab</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">20 groups &times; 4 tabs &mdash; <code>&lt;details name=""&gt;</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Difference Alert -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>Key difference:</strong> Bootstrap Tab is a <strong>panel switcher</strong> backed by 43 KB
+        of JavaScript infrastructure (custom event system, data store, config parser, DOM manipulation utils,
+        ARIA manager, keyboard navigator). It adds/removes <code>.active</code> classes on triggers and panels,
+        manages <code>aria-selected</code> attributes, handles arrow-key navigation, and fires 4 lifecycle events
+        per switch. Native <code>&lt;details name=""&gt;</code> provides mutually exclusive panels with
+        <strong>zero initialization</strong> &mdash; the browser automatically closes sibling details elements
+        when one opens. Built-in keyboard support (Enter/Space) and accessibility semantics are included.
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Card -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native exclusive tabs using &lt;details name=""&gt; (entire implementation)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- Exclusive tab group — only one open at a time --&gt;
+&lt;details name="my-tabs" open&gt;
+  &lt;summary&gt;Home&lt;/summary&gt;
+  &lt;p&gt;Home panel content.&lt;/p&gt;
+&lt;/details&gt;
+&lt;details name="my-tabs"&gt;
+  &lt;summary&gt;Profile&lt;/summary&gt;
+  &lt;p&gt;Profile panel content.&lt;/p&gt;
+&lt;/details&gt;
+&lt;details name="my-tabs"&gt;
+  &lt;summary&gt;Contact&lt;/summary&gt;
+  &lt;p&gt;Contact panel content.&lt;/p&gt;
+&lt;/details&gt;
+
+&lt;!-- That's it. No JS. No ARIA attributes.
+     Browser handles exclusivity, keyboard, and semantics. --&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only). DOM mutations counted via <code>MutationObserver</code>.
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const GROUP_COUNT = 20;
+  const TABS_PER_GROUP = 4;
+  const CYCLE_COUNT = 100;
+  // Bootstrap 5.3.8: tab.js + 7 dependency files (42.3 KB)
+  const BS_TAB_JS_SIZE = 43326;
+
+  const TAB_LABELS = ['Home', 'Profile', 'Contact', 'Settings'];
+  const TAB_CONTENT = [
+    'Home panel content for this tab group.',
+    'Profile panel content for this tab group.',
+    'Contact panel content for this tab group.',
+    'Settings panel content for this tab group.'
+  ];
+
+  // ── Generate Items ──────────────────────────────────────────────────
+
+  function generateBootstrapGroups(container) {
+    const frag = document.createDocumentFragment();
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'tab-group-sm mb-3';
+
+      // Nav tabs
+      const nav = document.createElement('ul');
+      nav.className = 'nav nav-tabs';
+      nav.setAttribute('role', 'tablist');
+      nav.id = `bs-tabs-${g}`;
+
+      // Tab content
+      const content = document.createElement('div');
+      content.className = 'tab-content border border-top-0 rounded-bottom';
+      content.id = `bs-content-${g}`;
+
+      for (let t = 0; t < TABS_PER_GROUP; t++) {
+        const tabId = `bs-tab-${g}-${t}`;
+        const paneId = `bs-pane-${g}-${t}`;
+        const isActive = t === 0;
+
+        // Nav item
+        const li = document.createElement('li');
+        li.className = 'nav-item';
+        li.setAttribute('role', 'presentation');
+
+        const btn = document.createElement('button');
+        btn.className = `nav-link${isActive ? ' active' : ''}`;
+        btn.id = tabId;
+        btn.type = 'button';
+        btn.setAttribute('data-bs-toggle', 'tab');
+        btn.setAttribute('data-bs-target', `#${paneId}`);
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-controls', paneId);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        btn.textContent = TAB_LABELS[t];
+
+        li.appendChild(btn);
+        nav.appendChild(li);
+
+        // Pane
+        const pane = document.createElement('div');
+        pane.className = `tab-pane${isActive ? ' active' : ''}`;
+        pane.id = paneId;
+        pane.setAttribute('role', 'tabpanel');
+        pane.setAttribute('aria-labelledby', tabId);
+        pane.textContent = TAB_CONTENT[t];
+        content.appendChild(pane);
+      }
+
+      groupDiv.appendChild(nav);
+      groupDiv.appendChild(content);
+      frag.appendChild(groupDiv);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeGroups(container) {
+    const frag = document.createDocumentFragment();
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'native-tab-group native-tab-group-sm';
+
+      for (let t = 0; t < TABS_PER_GROUP; t++) {
+        const details = document.createElement('details');
+        details.name = `native-group-${g}`;
+        details.id = `native-details-${g}-${t}`;
+        if (t === 0) details.open = true;
+
+        const summary = document.createElement('summary');
+        summary.textContent = TAB_LABELS[t];
+
+        const body = document.createElement('div');
+        body.className = 'native-tab-panel';
+        body.textContent = TAB_CONTENT[t];
+
+        details.appendChild(summary);
+        details.appendChild(body);
+        groupDiv.appendChild(details);
+      }
+
+      frag.appendChild(groupDiv);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapGroups(bsContainer);
+  generateNativeGroups(nativeContainer);
+
+  // ── UI helpers ──────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ──────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ───────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions
+    document.documentElement.classList.add('no-transitions');
+    await nextFrame();
+
+    // Collect BS tab triggers (all buttons with data-bs-toggle="tab")
+    const bsTriggers = bsContainer.querySelectorAll('[data-bs-toggle="tab"]');
+    // Collect native details elements grouped
+    const nativeGroups = [];
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const group = [];
+      for (let t = 0; t < TABS_PER_GROUP; t++) {
+        group.push(document.getElementById(`native-details-${g}-${t}`));
+      }
+      nativeGroups.push(group);
+    }
+
+    // ── 1. Initialization benchmark ──────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    // Dispose any existing instances first
+    bsTriggers.forEach(el => {
+      const existing = bootstrap.Tab.getInstance(el);
+      if (existing) existing.dispose();
+    });
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = [];
+    bsTriggers.forEach(el => {
+      bsInstances.push(new bootstrap.Tab(el));
+    });
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native <details name=""> needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Switch benchmark with DOM mutation counting ────────────────
+
+    setProgress('Benchmarking: Bootstrap tab switching...', 20);
+    await nextFrame();
+
+    // BS switch + mutation count
+    let bsMutationCount = 0;
+    const bsObserver = new MutationObserver(mutations => {
+      bsMutationCount += mutations.length;
+    });
+    bsObserver.observe(bsContainer, { attributes: true, childList: true, subtree: true });
+
+    const bsToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      // Switch through all 4 tabs in each group
+      for (let g = 0; g < GROUP_COUNT; g++) {
+        for (let t = 0; t < TABS_PER_GROUP; t++) {
+          const idx = g * TABS_PER_GROUP + t;
+          bsInstances[idx].show();
+        }
+      }
+    }
+    const bsToggleTime = performance.now() - bsToggleStart;
+    // Flush pending mutation records (callback is async, won't fire during sync loop)
+    bsMutationCount += bsObserver.takeRecords().length;
+    bsObserver.disconnect();
+
+    setProgress('Benchmarking: Native tab switching...', 60);
+    await nextFrame();
+
+    // Native switch + mutation count
+    let nativeMutationCount = 0;
+    const nativeObserver = new MutationObserver(mutations => {
+      nativeMutationCount += mutations.length;
+    });
+    nativeObserver.observe(nativeContainer, { attributes: true, childList: true, subtree: true });
+
+    const nativeToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let g = 0; g < GROUP_COUNT; g++) {
+        for (let t = 0; t < TABS_PER_GROUP; t++) {
+          nativeGroups[g][t].open = true;
+          // Browser auto-closes siblings with same name
+        }
+      }
+    }
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+    // Flush pending mutation records
+    nativeMutationCount += nativeObserver.takeRecords().length;
+    nativeObserver.disconnect();
+
+    // ── 3. Clean up ──────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    // Reset BS tabs to first tab in each group
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      bsInstances[g * TABS_PER_GROUP].show();
+    }
+    // Reset native to first tab open
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      nativeGroups[g][0].open = true;
+    }
+
+    // ── 4. Display results ───────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsToggleTime);
+    resToggleNative.textContent = formatMs(nativeToggleTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsToggleTime, nativeToggleTime);
+
+    const resDomBs = document.getElementById('res-dom-bs');
+    const resDomNative = document.getElementById('res-dom-native');
+    resDomBs.textContent = formatNumber(bsMutationCount);
+    resDomNative.textContent = formatNumber(nativeMutationCount);
+    markWinnerLoser(resDomBs, resDomNative, bsMutationCount, nativeMutationCount);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_TAB_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_TAB_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>

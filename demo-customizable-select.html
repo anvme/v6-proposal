@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: Customizable &lt;select&gt; — CSS-Only Styled Dropdowns</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    @supports (appearance: base-select) {
+
+      /* ── Basic styled select ── */
+      .styled-select {
+        appearance: base-select;
+        font-family: inherit;
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border: 2px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        min-width: 260px;
+        cursor: pointer;
+      }
+      .styled-select:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+        outline: none;
+      }
+      .styled-select::picker(select) {
+        appearance: base-select;
+        border: 2px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        background: var(--bs-body-bg);
+      }
+      .styled-select option {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        transition: background 0.1s;
+      }
+      .styled-select option:hover {
+        background: rgba(var(--bs-primary-rgb), 0.1);
+      }
+      .styled-select option:checked {
+        background: var(--bs-primary);
+        color: white;
+      }
+
+      /* ── Color-coded options ── */
+      .color-select option {
+        border-left: 4px solid transparent;
+        padding-left: 0.75rem;
+      }
+      .color-select option[data-color="red"] { border-left-color: var(--bs-danger); }
+      .color-select option[data-color="green"] { border-left-color: var(--bs-success); }
+      .color-select option[data-color="blue"] { border-left-color: var(--bs-primary); }
+      .color-select option[data-color="yellow"] { border-left-color: var(--bs-warning); }
+      .color-select option[data-color="purple"] { border-left-color: #7c3aed; }
+
+      /* ── Icon select ── */
+      .icon-select option {
+        padding: 0.6rem 0.75rem;
+        font-size: 1rem;
+      }
+
+    } /* end @supports */
+
+    /* Fallback notice */
+    .no-support-notice { display: none; }
+    @supports not (appearance: base-select) {
+      .no-support-notice { display: block !important; }
+      .demo-section { opacity: 0.5; pointer-events: none; }
+    }
+
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Customizable <code>&lt;select&gt;</code></h1>
+      <p class="lead text-body-secondary">Style native <code>&lt;select&gt;</code> dropdowns with CSS via <code>appearance: base-select</code>. Custom option styling, icons, colors &mdash; no JS dropdown reconstruction.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> Setting <code>appearance: base-select</code> on a <code>&lt;select&gt;</code> opts into the new customizable select mode.
+        You can then style the dropdown picker with <code>::picker(select)</code>, individual <code>&lt;option&gt;</code> elements directly,
+        and customize the checkmark with <code>::checkmark</code> and the arrow with <code>::picker-icon</code>.
+        This is a native HTML <code>&lt;select&gt;</code> &mdash; full keyboard navigation, form submission, and accessibility built in.
+      </div>
+      <div class="alert alert-warning no-support-notice" role="alert">
+        <strong>Browser not supported.</strong> Customizable <code>&lt;select&gt;</code> requires a browser that supports <code>appearance: base-select</code>. Check <a href="https://caniuse.com/?search=customizable%20select" target="_blank">caniuse</a> for current support. The demos below may not render correctly.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/?search=customizable%20select" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: Customizable Select</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-section">
+
+    <!-- Demo 1: Basic Styled Select -->
+    <div class="row mb-5">
+      <div class="col">
+        <h4 class="mb-3">1. Basic Styled Select</h4>
+        <p class="text-body-secondary">A <code>&lt;select&gt;</code> with custom border, padding, border-radius, focus ring, and styled dropdown picker. All CSS.</p>
+        <select class="styled-select">
+          <option value="" disabled selected>Choose a framework...</option>
+          <option value="bootstrap">Bootstrap</option>
+          <option value="tailwind">Tailwind CSS</option>
+          <option value="foundation">Foundation</option>
+          <option value="bulma">Bulma</option>
+          <option value="materialize">Materialize</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Demo 2: Color-coded Options -->
+    <div class="row mb-5">
+      <div class="col">
+        <h4 class="mb-3">2. Color-coded Options</h4>
+        <p class="text-body-secondary">Options with colored left borders to indicate categories. Uses <code>border-left</code> on <code>&lt;option&gt;</code> elements.</p>
+        <select class="styled-select color-select">
+          <option value="" disabled selected>Pick a priority...</option>
+          <option value="critical" data-color="red">Critical — Fix immediately</option>
+          <option value="high" data-color="yellow">High — Fix this sprint</option>
+          <option value="medium" data-color="blue">Medium — Scheduled</option>
+          <option value="low" data-color="green">Low — Backlog</option>
+          <option value="wish" data-color="purple">Wishlist — Someday</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Demo 3: Select with Icons -->
+    <div class="row mb-5">
+      <div class="col">
+        <h4 class="mb-3">3. Select with Icons</h4>
+        <p class="text-body-secondary">Options containing emoji icons alongside text. Native <code>&lt;option&gt;</code> elements can display any Unicode content.</p>
+        <select class="styled-select icon-select">
+          <option value="" disabled selected>Choose a language...</option>
+          <option value="js">&#x1F7E8; JavaScript</option>
+          <option value="ts">&#x1F535; TypeScript</option>
+          <option value="py">&#x1F40D; Python</option>
+          <option value="rs">&#x1F980; Rust</option>
+          <option value="go">&#x1F439; Go</option>
+          <option value="rb">&#x1F48E; Ruby</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Demo 4: Comparison -->
+    <div class="row mb-5">
+      <div class="col">
+        <h4 class="mb-3">4. Side-by-side Comparison</h4>
+        <p class="text-body-secondary">Default browser <code>&lt;select&gt;</code> vs customized <code>&lt;select&gt;</code> with <code>appearance: base-select</code>.</p>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-body-secondary">Default browser select</label>
+            <select class="form-select">
+              <option value="" disabled selected>Choose an option...</option>
+              <option value="1">Option One</option>
+              <option value="2">Option Two</option>
+              <option value="3">Option Three</option>
+              <option value="4">Option Four</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-primary">Customized select</label>
+            <select class="styled-select" style="width:100%">
+              <option value="" disabled selected>Choose an option...</option>
+              <option value="1">Option One</option>
+              <option value="2">Option Two</option>
+              <option value="3">Option Three</option>
+              <option value="4">Option Four</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: Customizable &lt;select&gt; (zero JS)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>@supports (appearance: base-select) {
+
+  /* Opt into customizable select */
+  select.styled {
+    appearance: base-select;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+  }
+
+  /* Style the dropdown picker */
+  select.styled::picker(select) {
+    border: 2px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+  }
+
+  /* Style individual options */
+  select.styled option {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+  }
+  select.styled option:hover {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+  }
+  select.styled option:checked {
+    background: var(--bs-primary);
+    color: white;
+  }
+
+  /* Color-coded options */
+  option[data-color="red"] {
+    border-left: 4px solid var(--bs-danger);
+  }
+  option[data-color="green"] {
+    border-left: 4px solid var(--bs-success);
+  }
+
+}
+
+&lt;!-- HTML: just a normal &lt;select&gt; --&gt;
+&lt;select class="styled"&gt;
+  &lt;option&gt;&#x1F7E8; JavaScript&lt;/option&gt;
+  &lt;option&gt;&#x1F535; TypeScript&lt;/option&gt;
+  &lt;option data-color="red"&gt;Critical&lt;/option&gt;
+&lt;/select&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. Customizable <code>&lt;select&gt;</code> uses zero JavaScript &mdash; all styling via <code>appearance: base-select</code> and CSS.</small>
+  </footer>
+</div>
+
+</body>
+</html>

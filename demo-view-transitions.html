@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: View Transitions API</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Tab panel transitions — named group */
+    ::view-transition-old(tab-panel) {
+      animation: slide-out-left 0.3s ease;
+    }
+    ::view-transition-new(tab-panel) {
+      animation: slide-in-right 0.3s ease;
+    }
+
+    /* Gallery image transitions — named group */
+    ::view-transition-old(gallery-image) {
+      animation: scale-down 0.3s ease;
+    }
+    ::view-transition-new(gallery-image) {
+      animation: scale-up 0.3s ease;
+    }
+
+    /* Root: no animation by default (prevents full-page blink on scoped transitions) */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none;
+    }
+
+    /* Theme toggle — enable full-page cross-fade only when class is set */
+    html.theme-transition::view-transition-old(root) {
+      animation: fade-out 0.25s ease-out;
+    }
+    html.theme-transition::view-transition-new(root) {
+      animation: fade-in 0.25s ease-in;
+    }
+
+    @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slide-out-left { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-30px); opacity: 0; } }
+    @keyframes slide-in-right { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes scale-down { from { transform: scale(1); opacity: 1; } to { transform: scale(0.9); opacity: 0; } }
+    @keyframes scale-up { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /*
+     * view-transition-name is set dynamically via JS so that only the
+     * element being updated participates in the transition.
+     * This prevents cross-contamination between sections.
+     */
+
+    /* Gallery thumbnails — active state indicator */
+    .gallery-thumb.active { outline: 3px solid var(--bs-primary); outline-offset: 2px; }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">View Transitions API</h1>
+      <p class="lead text-body-secondary">Smooth animated transitions between DOM states with <code>document.startViewTransition()</code>. Works for tab switches, image galleries, theme changes &mdash; any DOM update.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> Wrap any DOM mutation in <code>document.startViewTransition(() =&gt; { /* update DOM */ })</code>.
+        The browser snapshots the old state, applies your changes, then cross-fades (or custom-animates) between old and new.
+        Target specific elements with <code>view-transition-name</code> in CSS. Zero manual animation code needed.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/view-transitions" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: View Transitions</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Theme Toggle -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Theme Toggle with Full-page Cross-fade</h4>
+      <div class="card">
+        <div class="card-body text-center py-4">
+          <p class="mb-3">Toggle light/dark/auto theme with a smooth whole-page view transition. Auto follows your OS preference via <code>prefers-color-scheme</code>.</p>
+          <div class="btn-group" role="group" aria-label="Theme selection">
+            <button class="btn btn-outline-primary" id="theme-light" type="button">Light</button>
+            <button class="btn btn-outline-primary" id="theme-dark" type="button">Dark</button>
+            <button class="btn btn-outline-primary active" id="theme-auto" type="button">Auto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 2: Tab Switcher -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Tab Switcher with Cross-fade</h4>
+      <ul class="nav nav-tabs" id="demo-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-tab="tab-home" type="button" role="tab">Home</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-tab="tab-profile" type="button" role="tab">Profile</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-tab="tab-messages" type="button" role="tab">Messages</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-tab="tab-settings" type="button" role="tab">Settings</button>
+        </li>
+      </ul>
+      <div class="border border-top-0 rounded-bottom p-4">
+        <div class="tab-panel-content" id="tab-content">
+          <div id="tab-home">
+            <h5>Home</h5>
+            <p>Welcome to the home panel. Click the tabs above to see a smooth view transition animation between panels &mdash; no JavaScript animation library needed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 3: Image Gallery -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Image Gallery with Scale Transition</h4>
+      <div class="row">
+        <div class="col-md-8 mb-3">
+          <div class="card">
+            <div class="card-body text-center gallery-display" id="gallery-display" style="min-height: 300px;">
+              <div class="d-flex align-items-center justify-content-center h-100 bg-primary bg-gradient text-white rounded" style="min-height: 280px;">
+                <div>
+                  <h3>Mountain Sunrise</h3>
+                  <p class="mb-0">Click a thumbnail to transition</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="card gallery-thumb active" data-gallery="0" style="cursor:pointer">
+                <div class="d-flex align-items-center justify-content-center bg-primary bg-gradient text-white rounded" style="height:80px"><small>Mountain</small></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card gallery-thumb" data-gallery="1" style="cursor:pointer">
+                <div class="d-flex align-items-center justify-content-center bg-success bg-gradient text-white rounded" style="height:80px"><small>Forest</small></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card gallery-thumb" data-gallery="2" style="cursor:pointer">
+                <div class="d-flex align-items-center justify-content-center bg-danger bg-gradient text-white rounded" style="height:80px"><small>Sunset</small></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card gallery-thumb" data-gallery="3" style="cursor:pointer">
+                <div class="d-flex align-items-center justify-content-center bg-warning bg-gradient text-dark rounded" style="height:80px"><small>Beach</small></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card gallery-thumb" data-gallery="4" style="cursor:pointer">
+                <div class="d-flex align-items-center justify-content-center bg-info bg-gradient text-dark rounded" style="height:80px"><small>City</small></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card gallery-thumb" data-gallery="5" style="cursor:pointer">
+                <div class="d-flex align-items-center justify-content-center bg-dark bg-gradient text-white rounded" style="height:80px"><small>Night Sky</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: View Transitions API (key code)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;style&gt;
+  /* Define animations for named transition groups */
+  ::view-transition-old(tab-panel) {
+    animation: slide-out-left 0.3s ease;
+  }
+  ::view-transition-new(tab-panel) {
+    animation: slide-in-right 0.3s ease;
+  }
+&lt;/style&gt;
+
+&lt;script&gt;
+  // Tab switch — scope transition to this element only
+  button.addEventListener('click', () =&gt; {
+    tabContent.style.viewTransitionName = 'tab-panel';
+    const t = document.startViewTransition(() =&gt; {
+      tabContent.innerHTML = panels[targetId];
+    });
+    t.finished.then(() =&gt; {
+      tabContent.style.viewTransitionName = '';
+    });
+  });
+
+  // Theme toggle — full-page cross-fade via root group
+  themeBtn.addEventListener('click', () =&gt; {
+    document.startViewTransition(() =&gt; {
+      document.documentElement.setAttribute('data-bs-theme', next);
+    });
+  });
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. View Transitions API requires no JavaScript libraries &mdash; it's built into the browser.</small>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Tab Switcher ──────────────────────────────────────────────────
+  const tabPanels = {
+    'tab-home': '<h5>Home</h5><p>Welcome to the home panel. Click the tabs above to see a smooth view transition animation between panels &mdash; no JavaScript animation library needed.</p>',
+    'tab-profile': '<h5>Profile</h5><p>This is the profile panel. The view transition captures the old state, applies the DOM change, then cross-fades with a slide animation. All handled by the browser.</p>',
+    'tab-messages': '<h5>Messages</h5><p>Messages panel here. Each switch uses <code>document.startViewTransition()</code> &mdash; the browser does the heavy lifting. Custom animations via <code>::view-transition-old</code> and <code>::view-transition-new</code> pseudo-elements.</p>',
+    'tab-settings': '<h5>Settings</h5><p>Settings panel. Compare this to Bootstrap Tab JS which requires event-handler.js, base-component.js, data.js, selector-engine.js, and more. View Transitions API: zero dependencies.</p>'
+  };
+
+  const tabContent = document.getElementById('tab-content');
+  document.getElementById('demo-tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-tab]');
+    if (!btn) return;
+    const targetId = btn.getAttribute('data-tab');
+
+    document.querySelectorAll('#demo-tabs .nav-link').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (document.startViewTransition) {
+      // Scope the transition to tab-panel only
+      tabContent.style.viewTransitionName = 'tab-panel';
+      const t = document.startViewTransition(() => {
+        tabContent.innerHTML = tabPanels[targetId];
+      });
+      t.finished.then(() => { tabContent.style.viewTransitionName = ''; });
+    } else {
+      tabContent.innerHTML = tabPanels[targetId];
+    }
+  });
+
+  // ── Image Gallery ─────────────────────────────────────────────────
+  const galleryItems = [
+    { title: 'Mountain Sunrise', desc: 'Golden light over snow-capped peaks', bg: 'bg-primary bg-gradient' },
+    { title: 'Forest Trail', desc: 'A winding path through ancient woods', bg: 'bg-success bg-gradient' },
+    { title: 'Sunset Coast', desc: 'Crimson sky meeting the ocean', bg: 'bg-danger bg-gradient' },
+    { title: 'Sandy Beach', desc: 'Warm waves on golden sand', bg: 'bg-warning bg-gradient' },
+    { title: 'City Skyline', desc: 'Towers reaching into the clouds', bg: 'bg-info bg-gradient' },
+    { title: 'Night Sky', desc: 'Stars stretching across the cosmos', bg: 'bg-dark bg-gradient' }
+  ];
+
+  const galleryDisplay = document.getElementById('gallery-display');
+  document.querySelectorAll('.gallery-thumb').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const idx = parseInt(thumb.getAttribute('data-gallery'));
+      const item = galleryItems[idx];
+
+      document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+
+      const update = () => {
+        galleryDisplay.innerHTML = `
+          <div class="d-flex align-items-center justify-content-center h-100 ${item.bg} text-white rounded" style="min-height:280px">
+            <div><h3>${item.title}</h3><p class="mb-0">${item.desc}</p></div>
+          </div>`;
+      };
+
+      if (document.startViewTransition) {
+        // Scope the transition to gallery-image only
+        galleryDisplay.style.viewTransitionName = 'gallery-image';
+        const t = document.startViewTransition(update);
+        t.finished.then(() => { galleryDisplay.style.viewTransitionName = ''; });
+      } else {
+        update();
+      }
+    });
+  });
+
+  // ── Theme Toggle (Light / Dark / Auto) ────────────────────────────
+  const btnLight = document.getElementById('theme-light');
+  const btnDark = document.getElementById('theme-dark');
+  const btnAuto = document.getElementById('theme-auto');
+  const themeButtons = [btnLight, btnDark, btnAuto];
+  const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function getAutoTheme() {
+    return darkMQ.matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+  }
+
+  function setActiveButton(btn) {
+    themeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  let currentMode = 'auto'; // 'light' | 'dark' | 'auto'
+
+  function switchTheme(mode, btn) {
+    if (mode === currentMode) return;
+    currentMode = mode;
+    setActiveButton(btn);
+
+    const resolvedTheme = mode === 'auto' ? getAutoTheme() : mode;
+    const update = () => applyTheme(resolvedTheme);
+
+    if (document.startViewTransition) {
+      document.documentElement.classList.add('theme-transition');
+      const t = document.startViewTransition(update);
+      t.finished.then(() => { document.documentElement.classList.remove('theme-transition'); });
+    } else {
+      update();
+    }
+  }
+
+  btnLight.addEventListener('click', () => switchTheme('light', btnLight));
+  btnDark.addEventListener('click', () => switchTheme('dark', btnDark));
+  btnAuto.addEventListener('click', () => switchTheme('auto', btnAuto));
+
+  // React to OS theme changes when in auto mode
+  darkMQ.addEventListener('change', () => {
+    if (currentMode === 'auto') applyTheme(getAutoTheme());
+  });
+
+  // Initialize: auto mode, apply OS preference
+  applyTheme(getAutoTheme());
+})();
+</script>
+</body>
+</html>

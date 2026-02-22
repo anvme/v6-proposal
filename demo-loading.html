@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: aria-busy Loading — Native HTML Attribute</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* ──────────────────────────────────────────────────────────────────
+       aria-busy="true" loading indicator
+       One CSS rule makes ANY element show a spinner when aria-busy is set.
+       No custom classes, no JS animation libraries.
+       ────────────────────────────────────────────────────────────────── */
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Block-level elements: centered spinner replaces content */
+    [aria-busy="true"]:not(button):not(input):not(select):not(textarea) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3rem;
+    }
+    [aria-busy="true"]:not(button):not(input):not(select):not(textarea)::before {
+      content: '';
+      display: block;
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 3px solid var(--bs-border-color);
+      border-top-color: var(--bs-primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    [aria-busy="true"]:not(button):not(input):not(select):not(textarea) > * {
+      display: none;
+    }
+
+    /* Inline elements: spinner before text */
+    span[aria-busy="true"]::before,
+    small[aria-busy="true"]::before,
+    em[aria-busy="true"]::before,
+    a[aria-busy="true"]::before {
+      content: '';
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      border: 2px solid var(--bs-border-color);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.5em;
+      vertical-align: -0.15em;
+    }
+
+    /* Buttons: spinner replaces text */
+    button[aria-busy="true"],
+    [type="submit"][aria-busy="true"] {
+      position: relative;
+      pointer-events: none;
+      color: transparent !important;
+    }
+    button[aria-busy="true"]::after,
+    [type="submit"][aria-busy="true"]::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin: -0.625rem 0 0 -0.625rem;
+      border: 3px solid var(--bs-border-color);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    /* Restore color for spinner visibility on buttons */
+    button[aria-busy="true"]::after { color: var(--bs-btn-color, var(--bs-body-color)); }
+    .btn-primary[aria-busy="true"]::after { color: #fff; border-color: rgba(255,255,255,0.3); border-top-color: #fff; }
+    .btn-success[aria-busy="true"]::after { color: #fff; border-color: rgba(255,255,255,0.3); border-top-color: #fff; }
+    .btn-danger[aria-busy="true"]::after { color: #fff; border-color: rgba(255,255,255,0.3); border-top-color: #fff; }
+    .btn-secondary[aria-busy="true"]::after { color: #fff; border-color: rgba(255,255,255,0.3); border-top-color: #fff; }
+    .btn-outline-primary[aria-busy="true"]::after { border-color: rgba(var(--bs-primary-rgb),0.3); border-top-color: var(--bs-primary); }
+    .btn-outline-secondary[aria-busy="true"]::after { border-color: rgba(var(--bs-secondary-rgb),0.3); border-top-color: var(--bs-secondary); }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6"><code>aria-busy</code> Loading Indicator</h1>
+      <p class="lead text-body-secondary">Set <code>aria-busy="true"</code> on any HTML element to show a loading spinner. One CSS rule &mdash; no custom classes, no JS. The same native attribute that screen readers already understand.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> The <code>aria-busy</code> attribute is a native ARIA attribute supported by all browsers.
+        CSS targets <code>[aria-busy="true"]</code> to show a spinner via <code>::before</code> or <code>::after</code> pseudo-elements.
+        When loading completes, remove the attribute &mdash; the spinner disappears and screen readers announce the content is ready.
+        No JavaScript needed &mdash; pure CSS.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/?search=aria-busy" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: aria-busy</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Block elements -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Block Elements &mdash; <code>&lt;article aria-busy="true"&gt;</code></h4>
+      <p class="text-body-secondary">Any block element with <code>aria-busy="true"</code> hides its content and shows a centered spinner. Click to toggle.</p>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100" role="button" onclick="this.querySelector('article').toggleAttribute('aria-busy') || this.querySelector('article').setAttribute('aria-busy', this.querySelector('article').getAttribute('aria-busy') === 'true' ? 'false' : 'true'); if(this.querySelector('article').getAttribute('aria-busy')==='false') this.querySelector('article').removeAttribute('aria-busy')">
+            <article class="card-body" aria-busy="true">
+              <h5 class="card-title">Card Title</h5>
+              <p class="card-text">This content is hidden while <code>aria-busy="true"</code> is set. Click the card to toggle.</p>
+            </article>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100" role="button" onclick="var a=this.querySelector('article'); a.getAttribute('aria-busy')==='true' ? a.removeAttribute('aria-busy') : a.setAttribute('aria-busy','true')">
+            <article class="card-body">
+              <h5 class="card-title">Loaded Card</h5>
+              <p class="card-text">This card has loaded. Click to set it to loading state.</p>
+            </article>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100" role="button" onclick="var a=this.querySelector('article'); a.getAttribute('aria-busy')==='true' ? a.removeAttribute('aria-busy') : a.setAttribute('aria-busy','true')">
+            <article class="card-body" aria-busy="true">
+              <h5 class="card-title">Another Card</h5>
+              <p class="card-text">Also loading. Click to reveal content.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 2: Inline elements -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Inline Elements &mdash; <code>&lt;span aria-busy="true"&gt;</code></h4>
+      <p class="text-body-secondary">Inline elements show a small spinner before the text. Useful for inline loading status messages.</p>
+      <ul class="list-group" style="max-width: 500px;">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Profile picture
+          <span aria-busy="true">Uploading&hellip;</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Email verification
+          <span aria-busy="true">Sending&hellip;</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Payment
+          <span class="text-success">Complete</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Demo 3: Buttons -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Buttons &mdash; <code>&lt;button aria-busy="true"&gt;</code></h4>
+      <p class="text-body-secondary">Buttons show a spinner that replaces the text. Click any button to toggle <code>aria-busy</code>.</p>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <button class="btn btn-primary" aria-busy="true" aria-label="Loading" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')">Submit</button>
+        <button class="btn btn-success" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')">Save</button>
+        <button class="btn btn-danger" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')">Delete</button>
+        <button class="btn btn-secondary" aria-busy="true" aria-label="Loading" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')">Cancel</button>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-primary" aria-busy="true" aria-label="Loading" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')">Outline Primary</button>
+        <button class="btn btn-outline-secondary" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')">Outline Secondary</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 4: Table rows -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Table &mdash; <code>&lt;tbody aria-busy="true"&gt;</code></h4>
+      <p class="text-body-secondary">Set <code>aria-busy</code> on a <code>&lt;tbody&gt;</code> to show a loading state for table data. Click the table body to toggle.</p>
+      <table class="table table-bordered" style="max-width: 600px;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody aria-busy="true" role="button" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')" style="cursor:pointer">
+          <tr>
+            <td>Alice Johnson</td>
+            <td>alice@example.com</td>
+            <td>Active</td>
+          </tr>
+          <tr>
+            <td>Bob Smith</td>
+            <td>bob@example.com</td>
+            <td>Pending</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Demo 5: Entire section -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">5. Full Section &mdash; <code>&lt;section aria-busy="true"&gt;</code></h4>
+      <p class="text-body-secondary">Any container element works. Click the section below to toggle loading.</p>
+      <section class="border rounded p-4 bg-body-tertiary" aria-busy="true" role="button" onclick="this.getAttribute('aria-busy')==='true' ? this.removeAttribute('aria-busy') : this.setAttribute('aria-busy','true')" style="cursor:pointer; min-height: 120px;">
+        <h5>Dashboard Summary</h5>
+        <p class="mb-0">Revenue: $12,450 &mdash; Users: 1,234 &mdash; Orders: 89</p>
+      </section>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: <code>aria-busy</code> loading (complete CSS)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;style&gt;
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Block elements: centered spinner, hide children */
+  [aria-busy="true"]:not(button) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+  }
+  [aria-busy="true"]:not(button)::before {
+    content: '';
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid #dee2e6;
+    border-top-color: var(--bs-primary);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  [aria-busy="true"]:not(button) &gt; * {
+    display: none;
+  }
+
+  /* Buttons: spinner replaces text */
+  button[aria-busy="true"] {
+    position: relative;
+    pointer-events: none;
+    color: transparent !important;
+  }
+  button[aria-busy="true"]::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 1.25rem; height: 1.25rem;
+    margin: -0.625rem 0 0 -0.625rem;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+&lt;/style&gt;
+
+&lt;!-- Block element loading --&gt;
+&lt;article aria-busy="true"&gt;
+  Content hidden while loading...
+&lt;/article&gt;
+
+&lt;!-- Inline loading --&gt;
+&lt;span aria-busy="true"&gt;Uploading...&lt;/span&gt;
+
+&lt;!-- Button loading --&gt;
+&lt;button aria-busy="true" aria-label="Loading"&gt;
+  Submit
+&lt;/button&gt;
+
+&lt;!-- Toggle loading via JS --&gt;
+&lt;script&gt;
+  // Start loading
+  element.setAttribute('aria-busy', 'true');
+
+  // Done loading
+  element.removeAttribute('aria-busy');
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. Loading state driven by the native <code>aria-busy</code> HTML attribute &mdash; zero JavaScript, fully accessible.</small>
+  </footer>
+</div>
+
+</body>
+</html>

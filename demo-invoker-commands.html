@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: Invoker Commands — Zero-JS Interactivity</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Fullscreen section styling */
+    .fullscreen-section:fullscreen {
+      background: var(--bs-body-bg);
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Invoker Commands</h1>
+      <p class="lead text-body-secondary"><code>&lt;button commandfor="id" command="..."&gt;</code> &mdash; trigger actions on target elements via HTML attributes. Custom commands prefixed with <code>--</code> dispatch a <code>CommandEvent</code>.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> The <code>commandfor</code> attribute links a button to a target element by ID.
+        The <code>command</code> attribute specifies the action. Built-in commands include <code>show-modal</code>, <code>close</code>,
+        <code>toggle-popover</code>, <code>show-popover</code>, and <code>hide-popover</code>.
+        Custom commands prefixed with <code>--</code> dispatch a <code>CommandEvent</code> on the target &mdash; you handle it with a single event listener.
+        This replaces Bootstrap&rsquo;s <code>data-bs-toggle</code> + event handler infrastructure entirely.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/?search=invoker%20commands" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: Invoker Commands</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Fullscreen via Custom Command -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Fullscreen &mdash; <code>--toggle-fullscreen</code></h4>
+      <p class="text-body-secondary">Toggle fullscreen on any element using a custom invoker command. The button dispatches a <code>CommandEvent</code> &mdash; one event listener handles it.</p>
+      <button class="btn btn-primary mb-3" commandfor="fullscreen-section" command="--toggle-fullscreen">Toggle Fullscreen</button>
+
+      <section id="fullscreen-section" class="fullscreen-section border rounded p-4 bg-body-tertiary text-center">
+        <div>
+          <h5>Fullscreen Section</h5>
+          <p class="text-body-secondary mb-2">This section goes fullscreen via <code>command="--toggle-fullscreen"</code>.</p>
+          <button class="btn btn-outline-secondary btn-sm" commandfor="fullscreen-section" command="--toggle-fullscreen">Exit Fullscreen</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Demo 2: Custom Command Counter -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Counter &mdash; <code>--increment</code> / <code>--decrement</code></h4>
+      <p class="text-body-secondary">Custom commands (prefixed with <code>--</code>) dispatch a <code>CommandEvent</code> on the target element. Only the event listener needs JS.</p>
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-danger" commandfor="counter" command="--decrement">-</button>
+        <span class="fs-3 fw-bold" id="counter" style="min-width: 3ch; text-align: center;">0</span>
+        <button class="btn btn-success" commandfor="counter" command="--increment">+</button>
+        <button class="btn btn-outline-secondary" commandfor="counter" command="--reset">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: Invoker Commands with custom commands</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- Fullscreen via custom command --&gt;
+&lt;button commandfor="my-section" command="--toggle-fullscreen"&gt;
+  Toggle Fullscreen
+&lt;/button&gt;
+&lt;section id="my-section"&gt;...&lt;/section&gt;
+
+&lt;!-- Counter via custom commands --&gt;
+&lt;button commandfor="counter" command="--increment"&gt;+&lt;/button&gt;
+&lt;button commandfor="counter" command="--decrement"&gt;-&lt;/button&gt;
+&lt;span id="counter"&gt;0&lt;/span&gt;
+
+&lt;script&gt;
+  // Fullscreen handler — 5 lines
+  const section = document.getElementById('my-section');
+  section.addEventListener('command', (e) =&gt; {
+    if (e.command === '--toggle-fullscreen') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else section.requestFullscreen();
+    }
+  });
+
+  // Counter handler — 5 lines
+  const counter = document.getElementById('counter');
+  counter.addEventListener('command', (e) =&gt; {
+    let n = parseInt(counter.textContent);
+    if (e.command === '--increment') n++;
+    if (e.command === '--decrement') n--;
+    if (e.command === '--reset') n = 0;
+    counter.textContent = n;
+  });
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. Invoker commands dispatch events declaratively &mdash; custom commands need only a single event listener.</small>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Fullscreen handler
+  const section = document.getElementById('fullscreen-section');
+  section.addEventListener('command', (e) => {
+    if (e.command === '--toggle-fullscreen') {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        section.requestFullscreen();
+      }
+    }
+  });
+
+  // Counter handler
+  const counter = document.getElementById('counter');
+  counter.addEventListener('command', (e) => {
+    let n = parseInt(counter.textContent);
+    if (e.command === '--increment') n++;
+    if (e.command === '--decrement') n--;
+    if (e.command === '--reset') n = 0;
+    counter.textContent = n;
+  });
+})();
+</script>
+</body>
+</html>

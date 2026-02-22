@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bootstrap Native API Benchmarks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .benchmark-card { transition: transform 0.15s; }
+    .benchmark-card:hover { transform: translateY(-4px); }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <h1 class="mb-3">Bootstrap JS vs Native Browser API Benchmarks</h1>
+    <p class="lead text-body-secondary mb-4">
+      Interactive benchmarks comparing Bootstrap 5.3.8 JavaScript components against native browser API equivalents.
+      Each benchmark measures initialization time, operation speed, memory usage, DOM mutations, and code size.
+    </p>
+
+    <div class="alert alert-info mb-4">
+      <strong>Best results in Chrome</strong> &mdash; <code>performance.memory</code> API is Chrome-only.
+      Other metrics work across all modern browsers.
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Collapse</h5>
+            <p class="card-text">Bootstrap <code>Collapse</code> JS (270 lines, scrollHeight calc) vs native <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code> (zero JS).</p>
+            <p class="text-body-secondary small">50 items &times; 100 toggle cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-collapse.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Offcanvas</h5>
+            <p class="card-text">Bootstrap <code>Offcanvas</code> JS (638 lines with utils) vs native <code>&lt;dialog&gt;</code> element.</p>
+            <p class="text-body-secondary small">500 open/close cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-offcanvas.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Dropdown</h5>
+            <p class="card-text">Bootstrap <code>Dropdown</code> JS (988 lines + Floating UI) vs native Popover API + CSS Anchor Positioning.</p>
+            <p class="text-body-secondary small">20 dropdowns &times; 100 cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-dropdown.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Tooltip</h5>
+            <p class="card-text">Bootstrap <code>Tooltip</code> JS (745 lines + Floating UI) vs native Popover API.</p>
+            <p class="text-body-secondary small">200 tooltips, sequential trigger</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-tooltip.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Popover</h5>
+            <p class="card-text">Bootstrap <code>Popover</code> JS (111 lines + Tooltip parent) vs native Popover API.</p>
+            <p class="text-body-secondary small">100 popovers, sequential trigger</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-popover.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Toast</h5>
+            <p class="card-text">Bootstrap <code>Toast</code> JS (class toggler + timer + 41 KB infra) vs native Popover API (<code>popover="manual"</code>).</p>
+            <p class="text-body-secondary small">20 toasts &times; 100 show/hide cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-toast.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Accordion</h5>
+            <p class="card-text">Bootstrap <code>Accordion</code> JS (Collapse + <code>data-bs-parent</code> + 41 KB infra) vs native <code>&lt;details name=""&gt;</code> exclusive accordion.</p>
+            <p class="text-body-secondary small">10 groups &times; 5 items &times; 100 switch cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-accordion.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Carousel</h5>
+            <p class="card-text">Bootstrap <code>Carousel</code> JS (slide engine + touch/swipe + ~50 KB infra) vs native CSS <code>scroll-snap</code> (zero JS).</p>
+            <p class="text-body-secondary small">10 carousels &times; 5 slides &times; 100 slide cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-carousel.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Tab</h5>
+            <p class="card-text">Bootstrap <code>Tab</code> JS (panel switcher + ARIA + 43 KB infra) vs native <code>&lt;details name=""&gt;</code> exclusive accordion.</p>
+            <p class="text-body-secondary small">20 groups &times; 4 tabs &times; 100 switch cycles</p>
+          </div>
+          <div class="card-footer">
+            <a href="benchmark-tab.html" class="btn btn-primary w-100">Run Benchmark</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5">
+
+    <h2 class="mb-2">
+      <span class="badge text-bg-success me-2">NEW</span>
+      Native Browser APIs Not in Bootstrap JS
+    </h2>
+    <p class="lead text-body-secondary mb-4">
+      Modern browser APIs that could replace or extend Bootstrap&rsquo;s JavaScript &mdash; but aren&rsquo;t used yet.
+    </p>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Invoker Commands</h5>
+            <p class="card-text"><code>&lt;button commandfor="dialog" command="showModal"&gt;</code> &mdash; toggle dialogs, popovers, and fullscreen via HTML attributes. Zero JS event listeners.</p>
+            <p class="text-body-secondary small">Replaces: <code>data-bs-toggle</code> + event handler infrastructure</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-warning text-dark">Baseline 2025</span>
+            <div class="d-flex gap-2">
+              <a href="demo-invoker-commands.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/?search=invoker%20commands" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">View Transitions API</h5>
+            <p class="card-text">Smooth animated transitions between DOM states with <code>document.startViewTransition()</code>. Works across same-document and cross-document navigations.</p>
+            <p class="text-body-secondary small">Replaces: manual JS animation in Tab, Carousel, page transitions</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline 2025</span>
+            <div class="d-flex gap-2">
+              <a href="demo-view-transitions.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/view-transitions" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Scroll-driven Animations</h5>
+            <p class="card-text">Tie CSS animations to scroll position with <code>animation-timeline: scroll()</code> / <code>view()</code>. No scroll event listeners or <code>requestAnimationFrame</code>.</p>
+            <p class="text-body-secondary small">Replaces: ScrollSpy scroll listeners + offset calculations</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline 2025</span>
+            <div class="d-flex gap-2">
+              <a href="demo-scroll-driven-animations.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/?search=scroll-driven%20animations" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title"><code>aria-busy</code> Loading Indicator</h5>
+            <p class="card-text">Set <code>aria-busy="true"</code> on any HTML element to show a loading spinner via CSS. One native attribute &mdash; no custom classes, no JS. Fully accessible.</p>
+            <p class="text-body-secondary small">Replaces: JS spinner libraries, custom loading components</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline</span>
+            <div class="d-flex gap-2">
+              <a href="demo-loading.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/?search=aria-busy" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Customizable <code>&lt;select&gt;</code></h5>
+            <p class="card-text">Style native <code>&lt;select&gt;</code> dropdowns with CSS via <code>appearance: base-select</code> &mdash; custom options, icons, search. No JS dropdown reconstruction.</p>
+            <p class="text-body-secondary small">Replaces: JS-based custom select/dropdown components</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-warning text-dark">Limited support</span>
+            <div class="d-flex gap-2">
+              <a href="demo-customizable-select.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/?search=customizable%20select" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">CSS Anchor Positioning</h5>
+            <p class="card-text">Position tooltips, popovers, and dropdowns relative to a trigger element &mdash; no Floating UI or JS offset math needed.</p>
+            <p class="text-body-secondary small">Replaces: Floating UI in Dropdown, Tooltip, Popover</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline 2026</span>
+            <div class="d-flex gap-2">
+              <a href="demo-css-anchor-positioning.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/css-anchor-positioning" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5">
+    <p class="text-body-secondary">
+      Using Bootstrap <strong>5.3.8</strong> from jsDelivr CDN.
+      Native API benchmarks use zero external JavaScript libraries.
+    </p>
+  </div>
+</body>
+</html>

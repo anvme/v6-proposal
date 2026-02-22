@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Carousel JS vs Native CSS Scroll Snap</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    /* Native CSS Scroll Snap — only properties without Bootstrap utility equivalents */
+    .scroll-snap-x {
+      scroll-snap-type: x mandatory;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+    }
+    .scroll-snap-x::-webkit-scrollbar { display: none; }
+    .scroll-snap-child {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+
+    /* Small benchmark items */
+    .carousel-sm .carousel-item { min-height: 80px; }
+    .carousel-sm .carousel-item div,
+    #native-container .scroll-snap-child div { padding: .5rem; font-size: .75rem; }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Carousel Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Carousel JS (slide engine + touch/swipe + indicators + keyboard + ~50 KB infra) vs Native CSS Scroll Snap (zero JS for sliding)</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 10 carousels with 5 slides each (50 slides total).
+        The benchmark creates Bootstrap Carousel instances (init cost), then advances through all 5 slides in
+        each carousel for 100 cycles (5,000 slide operations per section). DOM mutations are counted via
+        <code>MutationObserver</code>. CSS transitions are disabled during the run so we measure raw JS overhead,
+        not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/css-snappoints" target="_blank" class="badge text-bg-secondary text-decoration-none">CSS Scroll Snap</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Carousel</code> &mdash; manages <code>.active</code> / <code>.carousel-item-next</code> / <code>.carousel-item-start</code> classes, reads layout for reflow, fires 2 lifecycle events per slide, handles touch/swipe via pointer events, keyboard navigation. Requires 9 JS dependency files (~50 KB).</p>
+          <!-- BS Carousel Preview -->
+          <div id="preview-bs-carousel" class="carousel slide" data-bs-ride="false">
+            <div class="carousel-indicators">
+              <button type="button" data-bs-target="#preview-bs-carousel" data-bs-slide-to="0" class="active" aria-current="true"></button>
+              <button type="button" data-bs-target="#preview-bs-carousel" data-bs-slide-to="1"></button>
+              <button type="button" data-bs-target="#preview-bs-carousel" data-bs-slide-to="2"></button>
+            </div>
+            <div class="carousel-inner rounded">
+              <div class="carousel-item active">
+                <div class="d-flex align-items-center justify-content-center bg-primary text-white" style="height:150px">Slide 1</div>
+              </div>
+              <div class="carousel-item">
+                <div class="d-flex align-items-center justify-content-center bg-success text-white" style="height:150px">Slide 2</div>
+              </div>
+              <div class="carousel-item">
+                <div class="d-flex align-items-center justify-content-center bg-danger text-white" style="height:150px">Slide 3</div>
+              </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#preview-bs-carousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#preview-bs-carousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses CSS <code>scroll-snap-type: x mandatory</code> &mdash; browser handles snapping, touch/swipe, momentum, deceleration. Prev/next via <code>scrollBy()</code> (3 lines of JS) or <code>::scroll-button</code> (zero JS where supported). Built-in keyboard and touch support.</p>
+          <!-- Native Scroll Snap Preview — Bootstrap utilities + scroll-snap CSS -->
+          <div class="position-relative rounded">
+            <div class="d-flex overflow-auto scroll-snap-x" style="scroll-behavior:smooth" id="preview-native-carousel">
+              <div class="w-100 flex-shrink-0 scroll-snap-child">
+                <div class="d-flex align-items-center justify-content-center bg-primary text-white" style="height:150px">Slide 1</div>
+              </div>
+              <div class="w-100 flex-shrink-0 scroll-snap-child">
+                <div class="d-flex align-items-center justify-content-center bg-success text-white" style="height:150px">Slide 2</div>
+              </div>
+              <div class="w-100 flex-shrink-0 scroll-snap-child">
+                <div class="d-flex align-items-center justify-content-center bg-danger text-white" style="height:150px">Slide 3</div>
+              </div>
+            </div>
+            <button class="carousel-control-prev" type="button" onclick="const c=document.getElementById('preview-native-carousel');c.scrollBy({left:-c.offsetWidth,behavior:'smooth'})">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" onclick="const c=document.getElementById('preview-native-carousel');c.scrollBy({left:c.offsetWidth,behavior:'smooth'})">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Carousel</th>
+              <th style="width: 35%;">Native Scroll Snap</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (10 carousels &times; 5 slides)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Slide time (100 cycles &times; 10 carousels &times; 5 slides)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">DOM mutations (100 cycles &times; 10 carousels &times; 5 slides)</td>
+              <td class="font-monospace fw-semibold" id="res-dom-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-dom-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (10 carousel instances)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/carousel.js" target="_blank">carousel.js</a> <span class="text-body-tertiary">(14.8 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/swipe.js" target="_blank">swipe</a> <span class="text-body-tertiary">(3.7 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/base-component.js" target="_blank">base-component</a> <span class="text-body-tertiary">(2.8 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/event-handler.js" target="_blank">event-handler</a> <span class="text-body-tertiary">(9.2 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/selector-engine.js" target="_blank">selector-engine</a> <span class="text-body-tertiary">(4.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/data.js" target="_blank">data</a> <span class="text-body-tertiary">(2.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/manipulator.js" target="_blank">manipulator</a> <span class="text-body-tertiary">(2.3 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/index.js" target="_blank">util</a> <span class="text-body-tertiary">(9.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/config.js" target="_blank">config</a> <span class="text-body-tertiary">(2.5 KB)</span>
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Test Items -->
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">10 carousels &times; 5 slides &mdash; <code>bootstrap.Carousel</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">10 carousels &times; 5 slides &mdash; CSS <code>scroll-snap</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Difference Alert -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>Key difference:</strong> Bootstrap Carousel manages slides by toggling <code>.active</code>,
+        <code>.carousel-item-next</code>, and <code>.carousel-item-start</code> classes, forcing layout reflows,
+        dispatching pointer events for swipe detection through a custom <code>Swipe</code> utility, firing 2
+        lifecycle events per slide (<code>slide</code>/<code>slid</code>), and maintaining an internal state
+        machine &mdash; all requiring ~50 KB of JavaScript. Native CSS Scroll Snap handles slide transitions
+        entirely in the browser&rsquo;s compositor thread: <code>scroll-snap-type: x mandatory</code> with
+        <code>scroll-snap-align: start</code> gives you touch/swipe, momentum scrolling, snap-to-slide,
+        and keyboard support with <strong>zero JavaScript</strong>. Prev/next buttons need only
+        <code>el.scrollBy({left: slideWidth})</code> &mdash; 1 line of JS.
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Card -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native scroll-snap carousel (Bootstrap utilities + 2 custom CSS rules)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;style&gt;
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .scroll-snap-x::-webkit-scrollbar { display: none; }
+  .scroll-snap-child { scroll-snap-align: start; }
+&lt;/style&gt;
+
+&lt;div class="position-relative rounded"&gt;
+  &lt;div class="d-flex overflow-auto scroll-snap-x"&gt;
+    &lt;div class="w-100 flex-shrink-0 scroll-snap-child"&gt;Slide 1&lt;/div&gt;
+    &lt;div class="w-100 flex-shrink-0 scroll-snap-child"&gt;Slide 2&lt;/div&gt;
+    &lt;div class="w-100 flex-shrink-0 scroll-snap-child"&gt;Slide 3&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;!-- Reuse Bootstrap carousel control styles --&gt;
+  &lt;button class="carousel-control-prev" onclick="..."&gt;...&lt;/button&gt;
+  &lt;button class="carousel-control-next" onclick="..."&gt;...&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only). DOM mutations counted via <code>MutationObserver</code>.
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const CAROUSEL_COUNT = 10;
+  const SLIDES_PER_CAROUSEL = 5;
+  const CYCLE_COUNT = 100;
+  // Bootstrap 5.3.8: carousel.js + swipe.js + 7 dependency files (~50.6 KB)
+  const BS_CAROUSEL_JS_SIZE = 50600;
+
+  const SLIDE_COLORS = ['bg-primary', 'bg-success', 'bg-danger', 'bg-warning', 'bg-info'];
+
+  // ── Generate Items ──────────────────────────────────────────────────
+
+  function generateBootstrapCarousels(container) {
+    const frag = document.createDocumentFragment();
+    for (let c = 0; c < CAROUSEL_COUNT; c++) {
+      const carouselId = `bs-carousel-${c}`;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'carousel-sm mb-3';
+
+      const carousel = document.createElement('div');
+      carousel.id = carouselId;
+      // No 'slide' class — we don't want animations in the benchmark
+      carousel.className = 'carousel';
+      carousel.setAttribute('data-bs-ride', 'false');
+      carousel.setAttribute('data-bs-interval', 'false');
+
+      const inner = document.createElement('div');
+      inner.className = 'carousel-inner rounded';
+
+      for (let s = 0; s < SLIDES_PER_CAROUSEL; s++) {
+        const item = document.createElement('div');
+        item.className = `carousel-item${s === 0 ? ' active' : ''}`;
+
+        const content = document.createElement('div');
+        content.className = `d-flex align-items-center justify-content-center ${SLIDE_COLORS[s]} text-white`;
+        content.style.height = '80px';
+        content.textContent = `Carousel ${c + 1} — Slide ${s + 1}`;
+
+        item.appendChild(content);
+        inner.appendChild(item);
+      }
+
+      carousel.appendChild(inner);
+      wrapper.appendChild(carousel);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeCarousels(container) {
+    const frag = document.createDocumentFragment();
+    for (let c = 0; c < CAROUSEL_COUNT; c++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-3';
+
+      const carousel = document.createElement('div');
+      carousel.className = 'd-flex overflow-auto scroll-snap-x rounded';
+      carousel.id = `native-carousel-${c}`;
+
+      for (let s = 0; s < SLIDES_PER_CAROUSEL; s++) {
+        const slide = document.createElement('div');
+        slide.className = 'w-100 flex-shrink-0 scroll-snap-child';
+
+        const content = document.createElement('div');
+        content.className = `d-flex align-items-center justify-content-center ${SLIDE_COLORS[s]} text-white`;
+        content.style.height = '80px';
+        content.textContent = `Carousel ${c + 1} — Slide ${s + 1}`;
+
+        slide.appendChild(content);
+        carousel.appendChild(slide);
+      }
+
+      wrapper.appendChild(carousel);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapCarousels(bsContainer);
+  generateNativeCarousels(nativeContainer);
+
+  // ── UI helpers ──────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ──────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ───────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions
+    document.documentElement.classList.add('no-transitions');
+    await nextFrame();
+
+    // Collect BS carousel elements
+    const bsCarouselEls = [];
+    for (let c = 0; c < CAROUSEL_COUNT; c++) {
+      bsCarouselEls.push(document.getElementById(`bs-carousel-${c}`));
+    }
+
+    // Collect native carousel elements and compute slide width
+    const nativeCarouselEls = [];
+    for (let c = 0; c < CAROUSEL_COUNT; c++) {
+      nativeCarouselEls.push(document.getElementById(`native-carousel-${c}`));
+    }
+
+    // ── 1. Initialization benchmark ──────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    // Dispose any existing instances first
+    bsCarouselEls.forEach(el => {
+      const existing = bootstrap.Carousel.getInstance(el);
+      if (existing) existing.dispose();
+    });
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = [];
+    bsCarouselEls.forEach(el => {
+      bsInstances.push(new bootstrap.Carousel(el, { ride: false, interval: false, wrap: true }));
+    });
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native CSS Scroll Snap needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Slide benchmark with DOM mutation counting ─────────────────
+
+    setProgress('Benchmarking: Bootstrap sliding...', 20);
+    await nextFrame();
+
+    // BS slide + mutation count
+    let bsMutationCount = 0;
+    const bsObserver = new MutationObserver(mutations => {
+      bsMutationCount += mutations.length;
+    });
+    bsObserver.observe(bsContainer, { attributes: true, childList: true, subtree: true });
+
+    const bsToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let c = 0; c < CAROUSEL_COUNT; c++) {
+        for (let s = 0; s < SLIDES_PER_CAROUSEL; s++) {
+          bsInstances[c].next();
+        }
+      }
+    }
+    const bsToggleTime = performance.now() - bsToggleStart;
+    bsMutationCount += bsObserver.takeRecords().length;
+    bsObserver.disconnect();
+
+    setProgress('Benchmarking: Native sliding...', 60);
+    await nextFrame();
+
+    // Native slide + mutation count
+    let nativeMutationCount = 0;
+    const nativeObserver = new MutationObserver(mutations => {
+      nativeMutationCount += mutations.length;
+    });
+    nativeObserver.observe(nativeContainer, { attributes: true, childList: true, subtree: true });
+
+    // Cache slide widths before timing (avoid forced layout reads inside timed loop)
+    const nativeSlideWidths = nativeCarouselEls.map(el => el.offsetWidth);
+
+    const nativeToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let c = 0; c < CAROUSEL_COUNT; c++) {
+        const el = nativeCarouselEls[c];
+        const slideWidth = nativeSlideWidths[c];
+        for (let s = 0; s < SLIDES_PER_CAROUSEL; s++) {
+          el.scrollLeft = s * slideWidth;
+        }
+      }
+    }
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+    nativeMutationCount += nativeObserver.takeRecords().length;
+    nativeObserver.disconnect();
+
+    // ── 3. Clean up ──────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    // Reset BS carousels to first slide
+    bsInstances.forEach(inst => inst.to(0));
+    // Reset native carousels to first slide
+    nativeCarouselEls.forEach(el => { el.scrollLeft = 0; });
+
+    // ── 4. Display results ───────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const bsTotalTime = bsInitTime + bsToggleTime;
+    const nativeTotalTime = nativeInitTime + nativeToggleTime;
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsTotalTime);
+    resToggleNative.textContent = formatMs(nativeTotalTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsTotalTime, nativeTotalTime);
+
+    const resDomBs = document.getElementById('res-dom-bs');
+    const resDomNative = document.getElementById('res-dom-native');
+    resDomBs.textContent = formatNumber(bsMutationCount);
+    resDomNative.textContent = formatNumber(nativeMutationCount);
+    markWinnerLoser(resDomBs, resDomNative, bsMutationCount, nativeMutationCount);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_CAROUSEL_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_CAROUSEL_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>

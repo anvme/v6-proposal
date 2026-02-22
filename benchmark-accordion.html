@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Accordion JS vs Native &lt;details name=""&gt;</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    /* Native <details name=""> styled as Bootstrap accordion */
+    .native-accordion {
+      --bs-accordion-border-color: #dee2e6;
+      --bs-accordion-border-width: 1px;
+      --bs-accordion-border-radius: 0.375rem;
+      --bs-accordion-bg: #fff;
+      --bs-accordion-btn-padding-x: 1.25rem;
+      --bs-accordion-btn-padding-y: 1rem;
+      --bs-accordion-body-padding-x: 1.25rem;
+      --bs-accordion-body-padding-y: 1rem;
+    }
+    .native-accordion details {
+      border: var(--bs-accordion-border-width) solid var(--bs-accordion-border-color);
+      background-color: var(--bs-accordion-bg);
+    }
+    .native-accordion details:first-of-type {
+      border-top-left-radius: var(--bs-accordion-border-radius);
+      border-top-right-radius: var(--bs-accordion-border-radius);
+    }
+    .native-accordion details:last-of-type {
+      border-bottom-left-radius: var(--bs-accordion-border-radius);
+      border-bottom-right-radius: var(--bs-accordion-border-radius);
+    }
+    .native-accordion details:not(:first-of-type) {
+      border-top: 0;
+    }
+    .native-accordion summary {
+      list-style: none;
+      cursor: pointer;
+      padding: var(--bs-accordion-btn-padding-y) var(--bs-accordion-btn-padding-x);
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--bs-accordion-btn-color, #212529);
+      background-color: var(--bs-accordion-btn-bg, #f8f9fa);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .native-accordion summary::-webkit-details-marker { display: none; }
+    .native-accordion summary::after {
+      content: '';
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-left: auto;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-size: 1.25rem;
+      transition: transform 0.2s ease-in-out;
+    }
+    .native-accordion details[open] > summary::after {
+      transform: rotate(-180deg);
+    }
+    .native-accordion details[open] > summary {
+      color: var(--bs-accordion-active-color, #052c65);
+      background-color: var(--bs-accordion-active-bg, #cfe2ff);
+    }
+    .native-accordion .native-accordion-body {
+      padding: var(--bs-accordion-body-padding-y) var(--bs-accordion-body-padding-x);
+      border-top: var(--bs-accordion-border-width) solid var(--bs-accordion-border-color);
+    }
+    /* Small benchmark items */
+    .accordion-sm .accordion-button { font-size: .75rem; padding: .375rem .75rem; }
+    .accordion-sm .accordion-body { font-size: .75rem; padding: .375rem .75rem; }
+    .native-accordion-sm summary { font-size: .75rem; padding: .375rem .75rem; }
+    .native-accordion-sm .native-accordion-body { font-size: .75rem; padding: .375rem .75rem; }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Accordion Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Accordion JS (Collapse + <code>data-bs-parent</code> + 41 KB infra) vs Native <code>&lt;details name=""&gt;</code> exclusive accordion</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 10 accordion groups with 5 items each (50 items total).
+        The benchmark creates Bootstrap Collapse instances with <code>parent</code> option (init cost), then opens
+        each item in sequence within each group for 100 cycles (5,000 switch operations per section).
+        Opening an item auto-closes its siblings. DOM mutations are counted via <code>MutationObserver</code>.
+        CSS transitions are disabled during the run so we measure raw JS overhead, not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/mdn-html_elements_details_name" target="_blank" class="badge text-bg-secondary text-decoration-none">&lt;details name=""&gt;</a>
+        <a href="https://caniuse.com/mdn-css_selectors_details-content" target="_blank" class="badge text-bg-secondary text-decoration-none">::details-content</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Collapse</code> with <code>data-bs-parent</code> &mdash; manages <code>.show</code> / <code>.collapsing</code> classes, reads <code>scrollHeight</code>, fires lifecycle events, auto-closes siblings via parent traversal. Requires 8 JS dependency files (41 KB).</p>
+          <!-- BS Accordion Preview -->
+          <div class="accordion" id="preview-bs-accordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#preview-bs-one" aria-expanded="true" aria-controls="preview-bs-one">Accordion Item #1</button>
+              </h2>
+              <div id="preview-bs-one" class="accordion-collapse collapse show" data-bs-parent="#preview-bs-accordion">
+                <div class="accordion-body">First item content. Only one panel open at a time.</div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#preview-bs-two" aria-expanded="false" aria-controls="preview-bs-two">Accordion Item #2</button>
+              </h2>
+              <div id="preview-bs-two" class="accordion-collapse collapse" data-bs-parent="#preview-bs-accordion">
+                <div class="accordion-body">Second item content.</div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#preview-bs-three" aria-expanded="false" aria-controls="preview-bs-three">Accordion Item #3</button>
+              </h2>
+              <div id="preview-bs-three" class="accordion-collapse collapse" data-bs-parent="#preview-bs-accordion">
+                <div class="accordion-body">Third item content.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>&lt;details name=""&gt;</code> &mdash; only one open at a time per group, browser closes siblings automatically. Built-in keyboard support (Enter/Space). Zero initialization, zero framework JS.</p>
+          <!-- Native Details Preview (styled as accordion) -->
+          <div class="native-accordion">
+            <details name="preview-native" open>
+              <summary>Accordion Item #1</summary>
+              <div class="native-accordion-body">First item content. Only one panel open at a time.</div>
+            </details>
+            <details name="preview-native">
+              <summary>Accordion Item #2</summary>
+              <div class="native-accordion-body">Second item content.</div>
+            </details>
+            <details name="preview-native">
+              <summary>Accordion Item #3</summary>
+              <div class="native-accordion-body">Third item content.</div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Accordion</th>
+              <th style="width: 35%;">Native &lt;details name&gt;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (10 groups &times; 5 items)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Switch time (100 cycles &times; 10 groups &times; 5 items)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">DOM mutations (100 cycles &times; 10 groups &times; 5 items)</td>
+              <td class="font-monospace fw-semibold" id="res-dom-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-dom-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (50 accordion items)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/collapse.js" target="_blank">collapse.js</a> <span class="text-body-tertiary">(8.6 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/base-component.js" target="_blank">base-component</a> <span class="text-body-tertiary">(2.8 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/event-handler.js" target="_blank">event-handler</a> <span class="text-body-tertiary">(9.2 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/selector-engine.js" target="_blank">selector-engine</a> <span class="text-body-tertiary">(4.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/data.js" target="_blank">data</a> <span class="text-body-tertiary">(2.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/manipulator.js" target="_blank">manipulator</a> <span class="text-body-tertiary">(2.3 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/index.js" target="_blank">util</a> <span class="text-body-tertiary">(9.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/config.js" target="_blank">config</a> <span class="text-body-tertiary">(2.5 KB)</span>
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Test Items -->
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">10 groups &times; 5 items &mdash; <code>Collapse</code> + <code>data-bs-parent</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">10 groups &times; 5 items &mdash; <code>&lt;details name=""&gt;</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Difference Alert -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>Key difference:</strong> Bootstrap Accordion is the <code>Collapse</code> component with a
+        <code>data-bs-parent</code> attribute that triggers exclusive behavior. Under the hood, when one item
+        opens, Bootstrap's JS traverses the parent container, queries all sibling <code>.collapse.show</code>
+        elements, and programmatically calls <code>.hide()</code> on each &mdash; reading <code>scrollHeight</code>,
+        setting inline <code>style.height</code>, swapping <code>.collapsing</code> classes, and firing
+        4 lifecycle events (<code>show</code>/<code>shown</code>/<code>hide</code>/<code>hidden</code>) per item.
+        This requires 41 KB of JavaScript infrastructure (custom event system, data store, config parser,
+        DOM manipulation utils). Native <code>&lt;details name=""&gt;</code> provides the identical exclusive
+        accordion behavior with <strong>zero initialization</strong> and <strong>zero JavaScript</strong> &mdash;
+        the browser closes sibling details elements automatically when one opens.
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Animation Example -->
+  <div class="row mb-4">
+    <div class="col">
+      <h4 class="mb-3">Live Example: Animated Native Accordion vs Bootstrap Accordion</h4>
+      <p class="text-body-secondary">Click items below to compare the animation feel. Both have a 0.35s ease transition. The native side uses only CSS.</p>
+    </div>
+  </div>
+
+  <div class="row mb-5" id="live-example">
+    <!-- Bootstrap JS animated -->
+    <div class="col-lg-6 mb-4">
+      <h6 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        JS animation (<code>.collapsing</code> + <code>scrollHeight</code>)
+      </h6>
+      <div class="accordion" id="demo-bs-accordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#demo-bs-1" aria-expanded="true">First item</button>
+          </h2>
+          <div id="demo-bs-1" class="accordion-collapse collapse show" data-bs-parent="#demo-bs-accordion">
+            <div class="accordion-body">This content is animated by Bootstrap&rsquo;s JavaScript. It reads <code>scrollHeight</code>, sets inline <code>style.height</code>, adds the <code>.collapsing</code> class, fires 4 events, then swaps to <code>.collapse.show</code>. The sibling is programmatically closed with the same process.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#demo-bs-2" aria-expanded="false">Second item</button>
+          </h2>
+          <div id="demo-bs-2" class="accordion-collapse collapse" data-bs-parent="#demo-bs-accordion">
+            <div class="accordion-body">Second accordion item. Each switch triggers: parent traversal, sibling query, 2 &times; <code>scrollHeight</code> reads, 2 &times; inline style mutations, multiple class changes, and 8 lifecycle events total (4 for hide + 4 for show).</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#demo-bs-3" aria-expanded="false">Third item</button>
+          </h2>
+          <div id="demo-bs-3" class="accordion-collapse collapse" data-bs-parent="#demo-bs-accordion">
+            <div class="accordion-body">Third item. Total: 41 KB of JavaScript to replicate what the browser does natively with a single HTML attribute.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Native <details name=""> animated with CSS only -->
+    <div class="col-lg-6 mb-4">
+      <h6 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        CSS-only animation (<code>::details-content</code>)
+      </h6>
+      <style>
+        /* Scoped to live example only — NOT applied to benchmark test items */
+        #live-example .native-accordion details {
+          interpolate-size: allow-keywords;
+        }
+        #live-example .native-accordion details::details-content {
+          transition: block-size 0.35s ease, content-visibility 0.35s ease allow-discrete;
+          block-size: 0;
+          overflow: hidden;
+        }
+        #live-example .native-accordion details[open]::details-content {
+          block-size: auto;
+        }
+      </style>
+      <div class="native-accordion">
+        <details name="demo-native" open>
+          <summary>First item</summary>
+          <div class="native-accordion-body">This content is animated by <strong>pure CSS</strong>. The <code>::details-content</code> pseudo-element transitions <code>block-size</code> from <code>0</code> to <code>auto</code>. The browser automatically closes the sibling when this opens. Zero JavaScript.</div>
+        </details>
+        <details name="demo-native">
+          <summary>Second item</summary>
+          <div class="native-accordion-body">Second item. No <code>scrollHeight</code> reads, no forced reflows, no class toggling, no inline styles, no lifecycle events. The browser&rsquo;s CSS engine handles everything.</div>
+        </details>
+        <details name="demo-native">
+          <summary>Third item</summary>
+          <div class="native-accordion-body">Third item. Total JavaScript required: <strong>0 lines</strong>. Just 6 lines of CSS for smooth animation + 1 HTML attribute (<code>name=""</code>) for exclusivity.</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Card -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native exclusive accordion using &lt;details name=""&gt; (entire implementation)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- Exclusive accordion — only one open at a time --&gt;
+&lt;details name="my-accordion" open&gt;
+  &lt;summary&gt;First item&lt;/summary&gt;
+  &lt;p&gt;First panel content.&lt;/p&gt;
+&lt;/details&gt;
+&lt;details name="my-accordion"&gt;
+  &lt;summary&gt;Second item&lt;/summary&gt;
+  &lt;p&gt;Second panel content.&lt;/p&gt;
+&lt;/details&gt;
+&lt;details name="my-accordion"&gt;
+  &lt;summary&gt;Third item&lt;/summary&gt;
+  &lt;p&gt;Third panel content.&lt;/p&gt;
+&lt;/details&gt;
+
+&lt;!-- That's it. No JS. No ARIA attributes.
+     Browser handles exclusivity, keyboard, animation
+     (via ::details-content), and semantics. --&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">CSS for smooth accordion animation (optional, zero JS)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>details {
+  interpolate-size: allow-keywords;
+}
+details::details-content {
+  transition: block-size 0.35s ease,
+              content-visibility 0.35s ease allow-discrete;
+  block-size: 0;
+  overflow: hidden;
+}
+details[open]::details-content {
+  block-size: auto;
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only). DOM mutations counted via <code>MutationObserver</code>.
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const GROUP_COUNT = 10;
+  const ITEMS_PER_GROUP = 5;
+  const CYCLE_COUNT = 100;
+  // Bootstrap 5.3.8: collapse.js + 7 dependency files (40.7 KB)
+  const BS_ACCORDION_JS_SIZE = 40700;
+
+  const ITEM_CONTENT = 'Accordion panel content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
+
+  // ── Generate Items ──────────────────────────────────────────────────
+
+  function generateBootstrapGroups(container) {
+    const frag = document.createDocumentFragment();
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const accordionDiv = document.createElement('div');
+      accordionDiv.className = 'accordion accordion-sm mb-3';
+      accordionDiv.id = `bs-accordion-${g}`;
+
+      for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+        const collapseId = `bs-collapse-${g}-${i}`;
+        const isFirst = i === 0;
+
+        const item = document.createElement('div');
+        item.className = 'accordion-item';
+
+        const header = document.createElement('h2');
+        header.className = 'accordion-header';
+
+        const btn = document.createElement('button');
+        btn.className = `accordion-button${isFirst ? '' : ' collapsed'}`;
+        btn.type = 'button';
+        btn.setAttribute('data-bs-toggle', 'collapse');
+        btn.setAttribute('data-bs-target', `#${collapseId}`);
+        btn.setAttribute('aria-expanded', isFirst ? 'true' : 'false');
+        btn.setAttribute('aria-controls', collapseId);
+        btn.textContent = `Group ${g + 1} — Item ${i + 1}`;
+
+        header.appendChild(btn);
+
+        const collapseDiv = document.createElement('div');
+        collapseDiv.id = collapseId;
+        collapseDiv.className = `accordion-collapse collapse${isFirst ? ' show' : ''}`;
+        collapseDiv.setAttribute('data-bs-parent', `#bs-accordion-${g}`);
+
+        const body = document.createElement('div');
+        body.className = 'accordion-body';
+        body.textContent = ITEM_CONTENT;
+
+        collapseDiv.appendChild(body);
+        item.appendChild(header);
+        item.appendChild(collapseDiv);
+        accordionDiv.appendChild(item);
+      }
+
+      frag.appendChild(accordionDiv);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeGroups(container) {
+    const frag = document.createDocumentFragment();
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'native-accordion native-accordion-sm mb-3';
+
+      for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+        const details = document.createElement('details');
+        details.name = `native-accordion-${g}`;
+        details.id = `native-details-${g}-${i}`;
+        if (i === 0) details.open = true;
+
+        const summary = document.createElement('summary');
+        summary.textContent = `Group ${g + 1} — Item ${i + 1}`;
+
+        const body = document.createElement('div');
+        body.className = 'native-accordion-body';
+        body.textContent = ITEM_CONTENT;
+
+        details.appendChild(summary);
+        details.appendChild(body);
+        groupDiv.appendChild(details);
+      }
+
+      frag.appendChild(groupDiv);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapGroups(bsContainer);
+  generateNativeGroups(nativeContainer);
+
+  // ── UI helpers ──────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ──────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ───────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions + override Bootstrap Collapse internals
+    document.documentElement.classList.add('no-transitions');
+    const style = document.createElement('style');
+    style.id = 'no-anim';
+    style.textContent = `.collapsing { height: auto !important; } .collapse:not(.show) { display: none; } .collapse.show { display: block; }`;
+    document.head.appendChild(style);
+    await nextFrame();
+
+    // Collect BS accordion collapse elements grouped
+    const bsGroups = [];
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const group = [];
+      for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+        group.push(document.getElementById(`bs-collapse-${g}-${i}`));
+      }
+      bsGroups.push(group);
+    }
+
+    // Collect native details elements grouped
+    const nativeGroups = [];
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const group = [];
+      for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+        group.push(document.getElementById(`native-details-${g}-${i}`));
+      }
+      nativeGroups.push(group);
+    }
+
+    // ── 1. Initialization benchmark ──────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    // Dispose any existing instances first
+    for (const group of bsGroups) {
+      for (const el of group) {
+        const existing = bootstrap.Collapse.getInstance(el);
+        if (existing) existing.dispose();
+      }
+    }
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = []; // grouped: bsInstances[g][i]
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      const group = [];
+      for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+        group.push(new bootstrap.Collapse(bsGroups[g][i], { toggle: false, parent: `#bs-accordion-${g}` }));
+      }
+      bsInstances.push(group);
+    }
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native <details name=""> needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Switch benchmark with DOM mutation counting ────────────────
+
+    setProgress('Benchmarking: Bootstrap accordion switching...', 20);
+    await nextFrame();
+
+    // BS switch + mutation count
+    let bsMutationCount = 0;
+    const bsObserver = new MutationObserver(mutations => {
+      bsMutationCount += mutations.length;
+    });
+    bsObserver.observe(bsContainer, { attributes: true, childList: true, subtree: true });
+
+    const bsToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let g = 0; g < GROUP_COUNT; g++) {
+        for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+          bsInstances[g][i].show();
+          // Bootstrap auto-hides siblings via parent option
+        }
+      }
+    }
+    const bsToggleTime = performance.now() - bsToggleStart;
+    bsMutationCount += bsObserver.takeRecords().length;
+    bsObserver.disconnect();
+
+    setProgress('Benchmarking: Native accordion switching...', 60);
+    await nextFrame();
+
+    // Native switch + mutation count
+    let nativeMutationCount = 0;
+    const nativeObserver = new MutationObserver(mutations => {
+      nativeMutationCount += mutations.length;
+    });
+    nativeObserver.observe(nativeContainer, { attributes: true, childList: true, subtree: true });
+
+    const nativeToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let g = 0; g < GROUP_COUNT; g++) {
+        for (let i = 0; i < ITEMS_PER_GROUP; i++) {
+          nativeGroups[g][i].open = true;
+          // Browser auto-closes siblings with same name
+        }
+      }
+    }
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+    nativeMutationCount += nativeObserver.takeRecords().length;
+    nativeObserver.disconnect();
+
+    // ── 3. Clean up ──────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    document.getElementById('no-anim').remove();
+    // Reset BS accordion to first item open in each group
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      bsInstances[g][0].show();
+    }
+    // Reset native to first item open
+    for (let g = 0; g < GROUP_COUNT; g++) {
+      nativeGroups[g][0].open = true;
+    }
+
+    // ── 4. Display results ───────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsInitTime + bsToggleTime);
+    resToggleNative.textContent = formatMs(nativeInitTime + nativeToggleTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsInitTime + bsToggleTime, nativeInitTime + nativeToggleTime);
+
+    const resDomBs = document.getElementById('res-dom-bs');
+    const resDomNative = document.getElementById('res-dom-native');
+    resDomBs.textContent = formatNumber(bsMutationCount);
+    resDomNative.textContent = formatNumber(nativeMutationCount);
+    markWinnerLoser(resDomBs, resDomNative, bsMutationCount, nativeMutationCount);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_ACCORDION_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_ACCORDION_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Offcanvas JS vs Native &lt;dialog&gt;</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Native dialog as offcanvas — only properties with no Bootstrap utility equivalent */
+    dialog.native-offcanvas[open],
+    dialog.animated-offcanvas[open] {
+      display: flex;
+      flex-direction: column;
+    }
+    dialog.native-offcanvas::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Animated dialog slide-in (entire animation — zero JS) */
+    dialog.animated-offcanvas {
+      transition: translate 0.3s ease,
+                  display 0.3s ease allow-discrete,
+                  overlay 0.3s ease allow-discrete;
+      translate: -100% 0;
+    }
+    dialog.animated-offcanvas[open] {
+      translate: 0 0;
+    }
+    @starting-style {
+      dialog.animated-offcanvas[open] { translate: -100% 0; }
+    }
+    dialog.animated-offcanvas::backdrop {
+      transition: background-color 0.3s ease,
+                  display 0.3s ease allow-discrete,
+                  overlay 0.3s ease allow-discrete;
+      background-color: transparent;
+    }
+    dialog.animated-offcanvas[open]::backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    @starting-style {
+      dialog.animated-offcanvas[open]::backdrop { background-color: transparent; }
+    }
+
+    /* Benchmark-only dialog (no animation, minimal overhead) */
+    dialog.bench-offcanvas[open] { display: block; }
+    dialog.bench-offcanvas::backdrop { background: transparent; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Offcanvas Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Offcanvas JS vs Native <code>&lt;dialog&gt;</code> element</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sides perform 500 open/close cycles.
+        Bootstrap creates an Offcanvas instance (backdrop div, focus trap, scroll lock via JS).
+        The native side uses <code>dialog.showModal()</code> / <code>dialog.close()</code> which
+        provides backdrop, focus trap, and scroll lock natively. CSS transitions are disabled
+        during the run so we measure raw JS overhead, not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/dialog" target="_blank" class="badge text-bg-secondary text-decoration-none">&lt;dialog&gt;</a>
+        <a href="https://caniuse.com/mdn-css_selectors_backdrop" target="_blank" class="badge text-bg-secondary text-decoration-none">::backdrop</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Buttons -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Offcanvas</code> &mdash; creates backdrop divs, manages focus traps, toggles scroll locks via JavaScript.</p>
+          <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#bsOffcanvas">
+            Preview Bootstrap Offcanvas
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>dialog.showModal()</code> / <code>dialog.close()</code> &mdash; browser handles backdrop, focus trap, and scroll lock natively. Zero JS dependencies.</p>
+          <button class="btn btn-outline-success btn-sm" type="button" id="btn-preview-native">
+            Preview Native Dialog
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Offcanvas</th>
+              <th style="width: 35%;">Native &lt;dialog&gt;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Toggle time (500 open/close cycles)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/offcanvas.js" target="_blank">offcanvas.js</a> (8.1 KB) +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/backdrop.js" target="_blank">backdrop.js</a> (4.0 KB) +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/focustrap.js" target="_blank">focustrap.js</a> (3.4 KB) +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/scrollbar.js" target="_blank">scrollbar.js</a> (4.6 KB)
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Comparison -->
+  <div class="row mb-4">
+    <div class="col">
+      <h4 class="mb-3">Live Example: Animated Native <code>&lt;dialog&gt;</code> vs Bootstrap Offcanvas</h4>
+      <p class="text-body-secondary">Click the buttons below to compare the animation feel. Both slide in from the left with a 0.3s ease transition. The native side uses only CSS.</p>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">JS animation (backdrop div + CSS transform)</small>
+      </h5>
+      <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#bsOffcanvasLive">
+        Open Bootstrap Offcanvas
+      </button>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">CSS-only animation (<code>@starting-style</code> + <code>transition</code>)</small>
+      </h5>
+      <button class="btn btn-outline-success w-100" type="button" id="btn-open-animated-dialog">
+        Open Native Dialog (Animated)
+      </button>
+    </div>
+  </div>
+
+  <!-- Animation Note -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>About animation:</strong> Bootstrap Offcanvas animates open/close using JavaScript
+        (creates a backdrop <code>&lt;div&gt;</code>, manages focus trap, toggles scroll lock, applies
+        CSS transforms via <code>.offcanvas.showing</code> / <code>.offcanvas.hiding</code> classes).
+        Native <code>&lt;dialog&gt;</code> opens instantly by default.
+        However, native <code>&lt;dialog&gt;</code> can achieve the <strong>same smooth slide-in animation</strong>
+        using pure CSS via <code>@starting-style</code> and <code>transition</code> &mdash; <strong>zero JavaScript required</strong>.
+        The benchmark above disables all transitions to measure raw JS overhead only.
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native dialog offcanvas &mdash; entire implementation</div>
+        <div class="card-body">
+          <h6 class="mb-2">HTML</h6>
+<pre class="mb-3"><code>&lt;!-- Native dialog styled as offcanvas (Bootstrap utility classes) --&gt;
+&lt;dialog class="animated-offcanvas position-fixed top-0 start-0 bottom-0
+               m-0 h-100 border-0 p-0 bg-white shadow-lg"
+        style="width: 400px; max-height: 100dvh;"
+        id="myDialog"&gt;
+  &lt;div class="d-flex align-items-center p-3 border-bottom"&gt;
+    &lt;h5 class="mb-0 me-auto"&gt;Title&lt;/h5&gt;
+    &lt;button class="btn-close" onclick="myDialog.close()"&gt;&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div class="p-3 overflow-auto flex-grow-1"&gt;
+    Content here...
+  &lt;/div&gt;
+&lt;/dialog&gt;
+
+&lt;!-- Open: myDialog.showModal()  Close: myDialog.close() --&gt;</code></pre>
+          <h6 class="mb-2">CSS (only display state + slide-in animation)</h6>
+<pre class="mb-0"><code>dialog.animated-offcanvas[open] {
+  display: flex;
+  flex-direction: column;
+}
+/* Slide-in from left, same as Bootstrap offcanvas */
+dialog.animated-offcanvas {
+  transition: translate 0.3s ease,
+              display 0.3s ease allow-discrete,
+              overlay 0.3s ease allow-discrete;
+  translate: -100% 0;
+}
+dialog.animated-offcanvas[open] { translate: 0 0; }
+@starting-style {
+  dialog.animated-offcanvas[open] { translate: -100% 0; }
+}
+/* Backdrop fade */
+dialog.animated-offcanvas::backdrop {
+  transition: background-color 0.3s ease,
+              display 0.3s ease allow-discrete,
+              overlay 0.3s ease allow-discrete;
+  background-color: transparent;
+}
+dialog.animated-offcanvas[open]::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+@starting-style {
+  dialog.animated-offcanvas[open]::backdrop {
+    background-color: transparent;
+  }
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only).
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<!-- Bootstrap Offcanvas (Preview) -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="bsOffcanvas" aria-labelledby="bsOffcanvasLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="bsOffcanvasLabel">Bootstrap Offcanvas</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <p>This panel is rendered by Bootstrap&rsquo;s Offcanvas JS plugin.</p>
+    <p class="text-body-secondary">It creates a backdrop <code>&lt;div&gt;</code>, activates a JavaScript focus trap, and disables body scroll via <code>ScrollBarHelper</code>.</p>
+  </div>
+</div>
+
+<!-- Bootstrap Offcanvas (Live Example) -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="bsOffcanvasLive" aria-labelledby="bsOffcanvasLiveLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="bsOffcanvasLiveLabel">Bootstrap Offcanvas</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <p>This panel uses Bootstrap&rsquo;s JavaScript Offcanvas plugin.</p>
+    <p>Each open/close triggers:</p>
+    <ul>
+      <li>Backdrop <code>&lt;div&gt;</code> created &amp; appended to body</li>
+      <li>Focus trap activated (event listeners on <code>focusin</code> + <code>keydown</code>)</li>
+      <li>Scroll lock via <code>ScrollBarHelper</code> (calculates scrollbar width, sets <code>overflow: hidden</code>)</li>
+      <li>Multiple class toggles (<code>.showing</code>, <code>.hiding</code>, <code>.show</code>)</li>
+      <li>Fires 4 custom events (<code>show</code>, <code>shown</code>, <code>hide</code>, <code>hidden</code>)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Native Dialog (Preview — no animation) -->
+<dialog class="native-offcanvas position-fixed top-0 start-0 bottom-0 m-0 h-100 border-0 p-0 bg-white shadow-lg" style="width: 400px; max-height: 100dvh;" id="nativeDialog">
+  <div class="d-flex align-items-center p-3 border-bottom">
+    <h5 class="mb-0 me-auto">Native &lt;dialog&gt;</h5>
+    <button type="button" class="btn-close" id="btn-close-native" aria-label="Close"></button>
+  </div>
+  <div class="p-3 overflow-auto flex-grow-1">
+    <p>This panel is a native <code>&lt;dialog&gt;</code> element styled as an offcanvas.</p>
+    <p class="text-body-secondary">The browser provides backdrop (<code>::backdrop</code>), focus trapping, and scroll lock &mdash; all natively, zero JavaScript.</p>
+  </div>
+</dialog>
+
+<!-- Native Dialog (Live Example — with CSS animation) -->
+<dialog class="animated-offcanvas position-fixed top-0 start-0 bottom-0 m-0 h-100 border-0 p-0 bg-white shadow-lg" style="width: 400px; max-height: 100dvh;" id="animatedDialog">
+  <div class="d-flex align-items-center p-3 border-bottom">
+    <h5 class="mb-0 me-auto">Native &lt;dialog&gt; (Animated)</h5>
+    <button type="button" class="btn-close" id="btn-close-animated" aria-label="Close"></button>
+  </div>
+  <div class="p-3 overflow-auto flex-grow-1">
+    <p>This panel is a native <code>&lt;dialog&gt;</code> with a <strong>pure CSS slide-in animation</strong>.</p>
+    <p>Zero JavaScript for animation. The browser handles:</p>
+    <ul>
+      <li>Backdrop via <code>::backdrop</code> pseudo-element</li>
+      <li>Focus trapping (built into <code>showModal()</code>)</li>
+      <li>Scroll lock (built into top layer)</li>
+      <li>Slide-in via <code>translate</code> + <code>@starting-style</code></li>
+      <li>Backdrop fade via <code>::backdrop</code> transition</li>
+    </ul>
+    <p class="text-body-secondary">Total JS: 3 lines (open, close, backdrop click). No framework, no dependencies.</p>
+  </div>
+</dialog>
+
+<!-- Hidden benchmark dialog (no animation, minimal overhead) -->
+<dialog class="bench-offcanvas position-fixed top-0 start-0 bottom-0 m-0 h-100 border-0 p-0 bg-white" style="width: 400px; max-height: 100dvh;" id="benchDialog"></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const ITERATIONS = 500;
+  // Bootstrap 5.3.8: offcanvas.js (8.1 KB) + backdrop.js (4.0 KB) + focustrap.js (3.4 KB) + scrollbar.js (4.6 KB) = ~20.1 KB
+  const BS_OFFCANVAS_JS_SIZE = 20543;
+
+  // ── Dialog preview handlers ───────────────────────────────────────
+
+  // Preview (no animation)
+  const nativeDialog = document.getElementById('nativeDialog');
+  document.getElementById('btn-preview-native').addEventListener('click', () => {
+    nativeDialog.showModal();
+  });
+  document.getElementById('btn-close-native').addEventListener('click', () => {
+    nativeDialog.close();
+  });
+  nativeDialog.addEventListener('click', (e) => {
+    if (e.target === nativeDialog) nativeDialog.close();
+  });
+
+  // Animated live example
+  const animatedDialog = document.getElementById('animatedDialog');
+  document.getElementById('btn-open-animated-dialog').addEventListener('click', () => {
+    animatedDialog.showModal();
+  });
+  document.getElementById('btn-close-animated').addEventListener('click', () => {
+    animatedDialog.close();
+  });
+  animatedDialog.addEventListener('click', (e) => {
+    if (e.target === animatedDialog) animatedDialog.close();
+  });
+
+  // ── UI helpers ────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ─────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ──────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions
+    document.documentElement.classList.add('no-transitions');
+
+    const bsEl = document.getElementById('bsOffcanvas');
+    const benchDialogEl = document.getElementById('benchDialog');
+
+    // Ensure everything starts closed
+    const existing = bootstrap.Offcanvas.getInstance(bsEl);
+    if (existing) existing.dispose();
+    if (benchDialogEl.open) benchDialogEl.close();
+
+    await nextFrame();
+
+    // ── 1. Initialization benchmark ─────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstance = new bootstrap.Offcanvas(bsEl);
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native <dialog> needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Toggle benchmark ─────────────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap toggling...', 20);
+    await nextFrame();
+
+    // -- Bootstrap toggle (no yields inside timing) --
+    const bsToggleStart = performance.now();
+
+    for (let i = 0; i < ITERATIONS; i++) {
+      bsInstance.show();
+      bsInstance.hide();
+    }
+
+    const bsToggleTime = performance.now() - bsToggleStart;
+
+    setProgress('Benchmarking: Native toggling...', 60);
+    await nextFrame();
+
+    // -- Native toggle (no yields inside timing) --
+    const nativeToggleStart = performance.now();
+
+    for (let i = 0; i < ITERATIONS; i++) {
+      benchDialogEl.showModal();
+      benchDialogEl.close();
+    }
+
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+
+    // ── 3. Clean up ─────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    bsInstance.hide();
+    if (benchDialogEl.open) benchDialogEl.close();
+
+    // ── 4. Display results ──────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsToggleTime);
+    resToggleNative.textContent = formatMs(nativeToggleTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsToggleTime, nativeToggleTime);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_OFFCANVAS_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_OFFCANVAS_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Popover JS vs Native Popover API</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Native popover — only properties with no Bootstrap utility equivalent */
+    [popover].native-popover {
+      inset: auto;
+      margin: 0;
+      max-width: 276px;
+      position-area: bottom span-right;
+    }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Popover Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Popover JS (extends Tooltip + Popper.js) vs Native Popover API + CSS Anchor Positioning</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 100 popover trigger buttons.
+        The benchmark creates Bootstrap Popover instances (init cost), then shows and hides
+        all 100 popovers for 10 cycles (1,000 show + 1,000 hide operations per section).
+        CSS transitions are disabled during the run so we measure raw JS overhead, not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/mdn-html_global_attributes_popover" target="_blank" class="badge text-bg-secondary text-decoration-none">Popover API</a>
+        <a href="https://caniuse.com/css-anchor-positioning" target="_blank" class="badge text-bg-secondary text-decoration-none">CSS Anchor Positioning</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Buttons -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Popover</code> (extends Tooltip) + Popper.js &mdash; creates DOM template, sanitizes HTML via <code>TemplateFactory</code> + <code>Sanitizer</code>, runs <code>createPopper()</code> for positioning on every show.</p>
+          <button class="btn btn-outline-primary btn-sm" type="button"
+                  data-bs-toggle="popover" data-bs-title="Bootstrap Popover"
+                  data-bs-content="This popover is created and positioned by Bootstrap JS + Popper.js.">
+            Click for Bootstrap Popover
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses Popover API (<code>popover="auto"</code>) + CSS Anchor Positioning &mdash; browser handles toggle, light-dismiss, top-layer stacking, and positioning. <strong>Zero JavaScript.</strong></p>
+          <button class="btn btn-outline-success btn-sm"
+                  style="anchor-name: --preview-pop-trigger;"
+                  popovertarget="preview-native-pop">
+            Click for Native Popover
+          </button>
+          <div popover="auto" id="preview-native-pop"
+               class="native-popover p-0 border rounded shadow bg-white"
+               style="position-anchor: --preview-pop-trigger;">
+            <div class="px-3 py-2 bg-body-secondary border-bottom fw-semibold small">Native Popover</div>
+            <div class="px-3 py-2 small">This popover uses the native Popover API. Click outside to dismiss.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Popover</th>
+              <th style="width: 35%;">Native Popover API</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (100 instances)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Toggle time (10 cycles &times; 100 items)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (100 instances)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/popover.js" target="_blank">popover.js</a> (2.6 KB) +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/tooltip.js" target="_blank">tooltip.js</a> (18.0 KB) +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/template-factory.js" target="_blank">template-factory.js</a> (4.6 KB) +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/sanitizer.js" target="_blank">sanitizer.js</a> (3.8 KB) +
+                  <a href="https://github.com/floating-ui/floating-ui/tree/v2.11.8/src" target="_blank">@popperjs/core</a>
+                  (<a href="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" target="_blank">19.7 KB min</a>)
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popover Sections Side by Side (BENCHMARK TEST ITEMS) -->
+  <div class="row">
+    <!-- Bootstrap JS Section -->
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">100 items &mdash; <code>data-bs-toggle="popover"</code></small>
+      </h5>
+      <div class="d-flex flex-wrap gap-1 border rounded p-3" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <!-- Native Browser API Section -->
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">100 items &mdash; <code>popover="auto"</code> + CSS Anchor</small>
+      </h5>
+      <div class="d-flex flex-wrap gap-1 border rounded p-3" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- About Note -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>About popover creation:</strong> Bootstrap Popover extends Tooltip and calls Popper.js&rsquo;s
+        <code>createPopper()</code> on <strong>every show</strong>, creates a new popover
+        <code>&lt;div&gt;</code> via <code>TemplateFactory</code>, sanitizes its HTML content
+        via <code>Sanitizer</code>, and runs JavaScript to calculate offsets and apply inline
+        <code>transform</code> styles. Native Popover API elements are <strong>already in the DOM</strong>
+        &mdash; the <code>popover="auto"</code> attribute provides click-to-toggle and light-dismiss
+        for free. CSS Anchor Positioning handles placement &mdash; <strong>zero JavaScript required</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native popover &mdash; entire implementation</div>
+        <div class="card-body">
+          <h6 class="mb-2">HTML (fully declarative &mdash; no JS)</h6>
+<pre class="mb-3"><code>&lt;!-- Trigger button --&gt;
+&lt;button style="anchor-name: --my-pop-trigger;"
+        popovertarget="my-popover"&gt;
+  Toggle popover
+&lt;/button&gt;
+
+&lt;!-- Popover (Bootstrap utility classes for styling) --&gt;
+&lt;div popover="auto" id="my-popover"
+     class="p-0 border rounded shadow bg-white"
+     style="position-anchor: --my-pop-trigger;"&gt;
+  &lt;div class="px-3 py-2 bg-body-secondary border-bottom fw-semibold small"&gt;Title&lt;/div&gt;
+  &lt;div class="px-3 py-2 small"&gt;Popover content here.&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+          <h6 class="mb-2">CSS (only anchor positioning &mdash; no styling needed)</h6>
+<pre class="mb-0"><code>[popover] {
+  inset: auto;                        /* reset UA default */
+  position-area: bottom span-right;   /* place below trigger */
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only).
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const POPOVER_COUNT = 100;
+  const CYCLE_COUNT = 10;
+  // Bootstrap 5.3.8: popover.js (2.6 KB) + tooltip.js (18.0 KB) + template-factory.js (4.6 KB) + sanitizer.js (3.8 KB) + @popperjs/core (19.7 KB min) = ~48.7 KB
+  const BS_POPOVER_JS_SIZE = 49841;
+
+  // ── Preview popover handler ─────────────────────────────────────
+
+  // Init the BS preview popover
+  const bsPreviewBtn = document.querySelector('[data-bs-toggle="popover"]');
+  if (bsPreviewBtn) {
+    new bootstrap.Popover(bsPreviewBtn);
+  }
+
+  // ── Generate Items ────────────────────────────────────────────────
+
+  function generateBootstrapItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < POPOVER_COUNT; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm btn-outline-secondary';
+      btn.setAttribute('data-bs-toggle', 'popover');
+      btn.setAttribute('data-bs-title', `Title ${i + 1}`);
+      btn.setAttribute('data-bs-content', `Popover body ${i + 1}`);
+      btn.textContent = `P${i + 1}`;
+      frag.appendChild(btn);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < POPOVER_COUNT; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm btn-outline-secondary';
+      btn.style.anchorName = `--pop-${i}`;
+      btn.setAttribute('popovertarget', `pop-${i}`);
+      btn.textContent = `P${i + 1}`;
+
+      const pop = document.createElement('div');
+      pop.setAttribute('popover', 'auto');
+      pop.id = `pop-${i}`;
+      pop.className = 'native-popover p-0 border rounded shadow bg-white';
+      pop.style.positionAnchor = `--pop-${i}`;
+      pop.innerHTML =
+        `<div class="px-3 py-2 bg-body-secondary border-bottom fw-semibold small">Title ${i + 1}</div>` +
+        `<div class="px-3 py-2 small">Popover body ${i + 1}</div>`;
+
+      frag.appendChild(btn);
+      frag.appendChild(pop);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapItems(bsContainer);
+  generateNativeItems(nativeContainer);
+
+  // Initialize all BS popovers so they're interactive on click
+  bsContainer.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+    new bootstrap.Popover(el);
+  });
+
+  // ── UI helpers ────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ─────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ──────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions
+    document.documentElement.classList.add('no-transitions');
+    await nextFrame();
+
+    // Collect elements
+    const bsButtons = bsContainer.querySelectorAll('[data-bs-toggle="popover"]');
+    const nativePopovers = nativeContainer.querySelectorAll('[popover]');
+
+    const hasPopover = typeof HTMLElement.prototype.showPopover === 'function';
+
+    // Dispose any existing BS instances
+    bsButtons.forEach(el => {
+      const inst = bootstrap.Popover.getInstance(el);
+      if (inst) inst.dispose();
+    });
+    // Ensure native popovers are hidden
+    nativePopovers.forEach(el => {
+      try { el.hidePopover(); } catch {}
+    });
+    await nextFrame();
+
+    // ── 1. Initialization benchmark ─────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = [];
+    bsButtons.forEach(el => {
+      bsInstances.push(new bootstrap.Popover(el, { animation: false }));
+    });
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native Popover API needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Toggle benchmark ─────────────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap toggling...', 20);
+    await nextFrame();
+
+    // -- Bootstrap toggle (no yields inside timing) --
+    const bsToggleStart = performance.now();
+
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let i = 0; i < bsInstances.length; i++) {
+        bsInstances[i].show();
+        bsInstances[i].hide();
+      }
+    }
+
+    const bsToggleTime = performance.now() - bsToggleStart;
+
+    // Dispose BS instances to clean up DOM
+    bsInstances.forEach(inst => inst.dispose());
+
+    setProgress('Benchmarking: Native toggling...', 60);
+    await nextFrame();
+
+    // -- Native toggle (no yields inside timing) --
+    const nativeToggleStart = performance.now();
+
+    if (hasPopover) {
+      for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+        for (let i = 0; i < nativePopovers.length; i++) {
+          nativePopovers[i].showPopover();
+          nativePopovers[i].hidePopover();
+        }
+      }
+    }
+
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+
+    // ── 3. Clean up ─────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    nativePopovers.forEach(el => { try { el.hidePopover(); } catch {} });
+
+    // Re-init BS popovers for interactive demo
+    bsContainer.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+      new bootstrap.Popover(el);
+    });
+
+    // ── 4. Display results ──────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsToggleTime);
+    resToggleNative.textContent = hasPopover ? formatMs(nativeToggleTime) : 'Popover API not supported';
+    if (hasPopover) markWinnerLoser(resToggleBs, resToggleNative, bsToggleTime, nativeToggleTime);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_POPOVER_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_POPOVER_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>

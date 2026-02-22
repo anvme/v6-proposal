@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: Scroll-driven Animations</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    @supports (animation-timeline: scroll()) {
+
+      /* ── 1. Reading Progress Bar ── */
+      .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 4px;
+        z-index: 1050;
+        animation: grow-width linear;
+        animation-timeline: scroll(root);
+      }
+      @keyframes grow-width {
+        from { width: 0%; }
+        to { width: 100%; }
+      }
+
+      /* ── 2. Reveal on Scroll ── */
+      .reveal-card {
+        opacity: 0;
+        transform: translateY(40px);
+        animation: reveal-up linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 100%;
+      }
+      @keyframes reveal-up {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ── 3. Parallax Header ── */
+      .parallax-hero {
+        overflow: clip;
+      }
+      .parallax-inner {
+        animation: parallax-shift linear;
+        animation-timeline: view();
+        animation-range: entry 0% exit 100%;
+      }
+      @keyframes parallax-shift {
+        from { transform: translateY(-80px) scale(1.15); }
+        to { transform: translateY(80px) scale(1.15); }
+      }
+
+      /* ── 4. Horizontal Scroll Indicator ── */
+      /* Named view timelines on items inside the scroll container */
+      .hscroll-item:nth-child(1) { view-timeline: --slide-1 inline; }
+      .hscroll-item:nth-child(2) { view-timeline: --slide-2 inline; }
+      .hscroll-item:nth-child(3) { view-timeline: --slide-3 inline; }
+      .hscroll-item:nth-child(4) { view-timeline: --slide-4 inline; }
+      .hscroll-item:nth-child(5) { view-timeline: --slide-5 inline; }
+
+      /* Hoist named timelines to the wrapper so dots outside the scroller can use them */
+      .hscroll-wrapper {
+        timeline-scope: --slide-1, --slide-2, --slide-3, --slide-4, --slide-5;
+      }
+
+      /* Connect each dot to its corresponding slide's view timeline */
+      .scroll-indicator-dot:nth-child(1) { animation-timeline: --slide-1; }
+      .scroll-indicator-dot:nth-child(2) { animation-timeline: --slide-2; }
+      .scroll-indicator-dot:nth-child(3) { animation-timeline: --slide-3; }
+      .scroll-indicator-dot:nth-child(4) { animation-timeline: --slide-4; }
+      .scroll-indicator-dot:nth-child(5) { animation-timeline: --slide-5; }
+
+      .scroll-indicator-dot {
+        animation: dot-activate linear both;
+        animation-range: contain 0% contain 100%;
+      }
+      @keyframes dot-activate {
+        0%, 100% { opacity: 0.3; transform: scale(0.7); background-color: var(--bs-secondary); }
+        30%, 70% { opacity: 1; transform: scale(1.3); background-color: var(--bs-primary); }
+      }
+
+      /* Also add a scroll progress bar under the horizontal scroller */
+      .hscroll-container {
+        scroll-timeline: --hscroll inline;
+      }
+      .hscroll-progress {
+        animation: grow-width linear;
+        animation-timeline: --hscroll;
+      }
+
+    } /* end @supports */
+
+    /* Horizontal scroll container */
+    .hscroll-container {
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+    .hscroll-container::-webkit-scrollbar { display: none; }
+    .hscroll-item {
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<!-- Reading Progress Bar -->
+<div class="reading-progress bg-primary"></div>
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Scroll-driven Animations</h1>
+      <p class="lead text-body-secondary">Tie CSS animations to scroll position with <code>animation-timeline: scroll()</code> and <code>view()</code>. No scroll event listeners, no <code>requestAnimationFrame</code>, no IntersectionObserver.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> <code>animation-timeline: scroll()</code> links an animation&rsquo;s progress to the scroll position of a container.
+        <code>animation-timeline: view()</code> links it to an element&rsquo;s visibility in the viewport.
+        <code>animation-range</code> controls when the animation starts/ends (e.g., <code>entry 0%</code> to <code>entry 100%</code>).
+        All runs on the compositor thread &mdash; 60fps guaranteed with zero JavaScript.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/?search=scroll-driven%20animations" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: Scroll-driven Animations</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Reading Progress Bar -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Reading Progress Bar</h4>
+      <p class="text-body-secondary">The blue bar at the top of the page fills as you scroll down. Uses <code>animation-timeline: scroll(root)</code> &mdash; zero JavaScript. Bootstrap ScrollSpy would need scroll event listeners + offset calculations + class toggling for a similar indicator.</p>
+      <div class="alert alert-success">
+        <strong>Scroll down</strong> to see the progress bar fill at the very top of the page.
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 2: Reveal on Scroll -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Reveal on Scroll</h4>
+      <p class="text-body-secondary">Cards fade in and slide up as they enter the viewport. Uses <code>animation-timeline: view()</code> with <code>animation-range: entry</code>.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm reveal-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-center bg-primary bg-gradient text-white rounded mb-3" style="height:120px">
+            <h4 class="mb-0">Card 1</h4>
+          </div>
+          <h5 class="card-title">Zero JavaScript</h5>
+          <p class="card-text text-body-secondary">This card animates into view using only CSS. No IntersectionObserver, no scroll event listener, no animation library.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm reveal-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-center bg-success bg-gradient text-white rounded mb-3" style="height:120px">
+            <h4 class="mb-0">Card 2</h4>
+          </div>
+          <h5 class="card-title">Compositor Thread</h5>
+          <p class="card-text text-body-secondary">Scroll-driven animations run on the compositor thread, guaranteeing 60fps even on busy pages. JS scroll handlers run on the main thread and can jank.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm reveal-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-center bg-danger bg-gradient text-white rounded mb-3" style="height:120px">
+            <h4 class="mb-0">Card 3</h4>
+          </div>
+          <h5 class="card-title">Replaces ScrollSpy</h5>
+          <p class="card-text text-body-secondary">Bootstrap ScrollSpy uses scroll events + offset math + class toggling (~43 KB JS). Scroll-driven animations do the same with a few CSS lines.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm reveal-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-center bg-warning bg-gradient text-dark rounded mb-3" style="height:120px">
+            <h4 class="mb-0">Card 4</h4>
+          </div>
+          <h5 class="card-title">animation-range</h5>
+          <p class="card-text text-body-secondary"><code>animation-range: entry 0% entry 100%</code> means the animation plays during the element&rsquo;s entry into the viewport. You can also use <code>exit</code>, <code>contain</code>, or <code>cover</code>.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm reveal-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-center bg-info bg-gradient text-dark rounded mb-3" style="height:120px">
+            <h4 class="mb-0">Card 5</h4>
+          </div>
+          <h5 class="card-title">view() vs scroll()</h5>
+          <p class="card-text text-body-secondary"><code>scroll()</code> tracks the scroll position of a container. <code>view()</code> tracks an element&rsquo;s visibility within its scrolling ancestor. Both are pure CSS.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm reveal-card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-center bg-dark bg-gradient text-white rounded mb-3" style="height:120px">
+            <h4 class="mb-0">Card 6</h4>
+          </div>
+          <h5 class="card-title">Progressive Enhancement</h5>
+          <p class="card-text text-body-secondary">All animations are wrapped in <code>@supports (animation-timeline: scroll())</code>. Unsupported browsers see static content &mdash; no broken layouts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 3: Parallax Header -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Parallax Header</h4>
+      <p class="text-body-secondary mb-3">The background moves at a different rate than the page scroll, creating a depth effect. Uses <code>animation-timeline: view()</code> with <code>animation-range: entry 0% exit 100%</code> &mdash; the shift happens as this section enters and exits the viewport.</p>
+      <div class="parallax-hero rounded position-relative" style="height: 300px;">
+        <div class="parallax-inner d-flex align-items-center justify-content-center bg-primary bg-gradient text-white" style="min-height: 460px;">
+          <div class="text-center p-4">
+            <h2>Parallax Section</h2>
+            <p class="fs-5 mb-0">This background shifts as you scroll. Pure CSS &mdash; no JS parallax library.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 4: Horizontal Scroll Indicator -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Horizontal Scroll Indicator</h4>
+      <p class="text-body-secondary mb-3">Dots and progress bar below track your horizontal scroll position. Uses named <code>view-timeline</code> on each slide, <code>timeline-scope</code> to hoist them to the wrapper, and <code>scroll-timeline</code> for the progress bar. Zero JavaScript.</p>
+
+      <div class="hscroll-wrapper">
+        <div class="d-flex overflow-auto hscroll-container gap-3 pb-3" id="hscroll">
+          <div class="hscroll-item flex-shrink-0" style="width:280px">
+            <div class="card h-100">
+              <div class="d-flex align-items-center justify-content-center bg-primary bg-gradient text-white rounded-top" style="height:140px"><h5 class="mb-0">Slide 1</h5></div>
+              <div class="card-body"><p class="card-text text-body-secondary">Scroll horizontally to see the indicator dots and progress bar update in real-time.</p></div>
+            </div>
+          </div>
+          <div class="hscroll-item flex-shrink-0" style="width:280px">
+            <div class="card h-100">
+              <div class="d-flex align-items-center justify-content-center bg-success bg-gradient text-white rounded-top" style="height:140px"><h5 class="mb-0">Slide 2</h5></div>
+              <div class="card-body"><p class="card-text text-body-secondary">Each dot&rsquo;s opacity and scale are driven by its corresponding card&rsquo;s <code>view-timeline</code>.</p></div>
+            </div>
+          </div>
+          <div class="hscroll-item flex-shrink-0" style="width:280px">
+            <div class="card h-100">
+              <div class="d-flex align-items-center justify-content-center bg-danger bg-gradient text-white rounded-top" style="height:140px"><h5 class="mb-0">Slide 3</h5></div>
+              <div class="card-body"><p class="card-text text-body-secondary">Uses named <code>view-timeline</code> + <code>timeline-scope</code> to connect dots outside the scroller to items inside it.</p></div>
+            </div>
+          </div>
+          <div class="hscroll-item flex-shrink-0" style="width:280px">
+            <div class="card h-100">
+              <div class="d-flex align-items-center justify-content-center bg-warning bg-gradient text-dark rounded-top" style="height:140px"><h5 class="mb-0">Slide 4</h5></div>
+              <div class="card-body"><p class="card-text text-body-secondary">Compare to Bootstrap Carousel indicators which need JS to sync active state.</p></div>
+            </div>
+          </div>
+          <div class="hscroll-item flex-shrink-0" style="width:280px">
+            <div class="card h-100">
+              <div class="d-flex align-items-center justify-content-center bg-info bg-gradient text-dark rounded-top" style="height:140px"><h5 class="mb-0">Slide 5</h5></div>
+              <div class="card-body"><p class="card-text text-body-secondary">Zero JavaScript. Zero IntersectionObserver. Zero scroll event listeners. Just CSS.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar linked to horizontal scroll -->
+        <div class="rounded-pill overflow-hidden mt-2" style="height:4px;background:var(--bs-border-color)">
+          <div class="hscroll-progress bg-primary h-100" style="width:0%"></div>
+        </div>
+
+        <!-- Indicator dots linked to individual slides -->
+        <div class="d-flex justify-content-center gap-2 mt-2">
+          <span class="scroll-indicator-dot rounded-circle d-inline-block" style="width:12px;height:12px;background:var(--bs-secondary)"></span>
+          <span class="scroll-indicator-dot rounded-circle d-inline-block" style="width:12px;height:12px;background:var(--bs-secondary)"></span>
+          <span class="scroll-indicator-dot rounded-circle d-inline-block" style="width:12px;height:12px;background:var(--bs-secondary)"></span>
+          <span class="scroll-indicator-dot rounded-circle d-inline-block" style="width:12px;height:12px;background:var(--bs-secondary)"></span>
+          <span class="scroll-indicator-dot rounded-circle d-inline-block" style="width:12px;height:12px;background:var(--bs-secondary)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: Scroll-driven Animations (zero JS)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>@supports (animation-timeline: scroll()) {
+
+  /* Reading progress bar — fills as page scrolls */
+  .reading-progress {
+    position: fixed; top: 0; left: 0;
+    width: 0%; height: 4px;
+    animation: grow-width linear;
+    animation-timeline: scroll(root);
+  }
+
+  /* Reveal on scroll — cards fade in on viewport entry */
+  .reveal-card {
+    animation: reveal-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 100%;
+  }
+
+  /* Parallax — background shifts as section scrolls through viewport */
+  .parallax-inner {
+    animation: parallax-shift linear;
+    animation-timeline: view();
+    animation-range: entry 0% exit 100%;
+  }
+  @keyframes parallax-shift {
+    from { transform: translateY(-80px) scale(1.15); }
+    to { transform: translateY(80px) scale(1.15); }
+  }
+
+  /* Horizontal scroll indicator — named timelines + timeline-scope */
+  .hscroll-item:nth-child(1) { view-timeline: --slide-1 inline; }
+  .hscroll-item:nth-child(2) { view-timeline: --slide-2 inline; }
+  /* ... one per slide ... */
+
+  .hscroll-wrapper {
+    timeline-scope: --slide-1, --slide-2, --slide-3, --slide-4, --slide-5;
+  }
+
+  .scroll-indicator-dot:nth-child(1) { animation-timeline: --slide-1; }
+  .scroll-indicator-dot:nth-child(2) { animation-timeline: --slide-2; }
+  /* ... dot animation tracks its slide's visibility ... */
+
+  /* Progress bar tracks horizontal scroll position */
+  .hscroll-container { scroll-timeline: --hscroll inline; }
+  .hscroll-progress {
+    animation: grow-width linear;
+    animation-timeline: --hscroll;
+  }
+
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. All scroll-driven animations use zero JavaScript &mdash; pure CSS running on the compositor thread.</small>
+  </footer>
+</div>
+
+</body>
+</html>

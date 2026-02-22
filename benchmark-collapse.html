@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Collapse JS vs Native &lt;details&gt;/&lt;summary&gt;</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Collapse Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Collapse JS vs Native <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code></p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 50 collapsible items with identical content.
+        The benchmark creates Bootstrap Collapse instances (init cost), then toggles all 50 items open and
+        closed for 100 cycles (5,000 open + 5,000 close operations per section). CSS transitions are
+        disabled during the run so we measure raw JS overhead, not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/details" target="_blank" class="badge text-bg-secondary text-decoration-none">&lt;details&gt; / &lt;summary&gt;</a>
+        <a href="https://caniuse.com/mdn-css_selectors_details-content" target="_blank" class="badge text-bg-secondary text-decoration-none">::details-content</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Collapse</code> &mdash; reads <code>scrollHeight</code> to calculate height, sets inline <code>style.height</code>, swaps <code>.collapsing</code> class, waits for <code>transitionend</code>.</p>
+          <button class="btn btn-outline-primary btn-sm w-100 text-start" data-bs-toggle="collapse" data-bs-target="#preview-bs-collapse" aria-expanded="false">
+            Click to expand (Bootstrap)
+          </button>
+          <div class="collapse" id="preview-bs-collapse">
+            <div class="card card-body mt-1">This content is toggled by Bootstrap Collapse JS.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>&lt;details&gt;</code> / <code>&lt;summary&gt;</code> &mdash; browser handles state, accessibility, keyboard support. Zero JavaScript.</p>
+          <details>
+            <summary class="btn btn-outline-success btn-sm w-100 text-start">Click to expand (Native)</summary>
+            <div class="card card-body mt-1">This content is toggled by the native <code>&lt;details&gt;</code> element. Zero JS.</div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Collapse</th>
+              <th style="width: 35%;">Native &lt;details&gt;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (50 instances)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Toggle time (100 cycles &times; 50 items)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (50 instances)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/collapse.js" target="_blank">collapse.js</a> (8.6 KB)
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collapse Sections Side by Side (BENCHMARK TEST ITEMS) -->
+  <div class="row">
+    <!-- Bootstrap JS Section -->
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">50 items &mdash; <code>data-bs-toggle="collapse"</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <!-- Native Browser API Section -->
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">50 items &mdash; <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Animation Note -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>About animation:</strong> Bootstrap Collapse animates open/close using JavaScript
+        (reads <code>scrollHeight</code>, sets inline <code>height</code>, swaps <code>.collapsing</code> class,
+        waits for <code>transitionend</code>). Native <code>&lt;details&gt;</code> opens instantly by default.
+        However, native <code>&lt;details&gt;</code> can achieve the <strong>same smooth animation</strong>
+        using pure CSS via the <code>::details-content</code> pseudo-element &mdash; <strong>zero JavaScript required</strong>.
+        The benchmark above disables all transitions to measure raw JS overhead only.
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <h4 class="mb-3">Live Example: Animated Native <code>&lt;details&gt;</code> vs Bootstrap Collapse</h4>
+      <p class="text-body-secondary">Click items below to compare the animation feel. Both have a 0.35s ease transition. The native side uses only CSS.</p>
+    </div>
+  </div>
+
+  <div class="row mb-5" id="live-example">
+    <!-- Bootstrap JS animated -->
+    <div class="col-lg-6 mb-4">
+      <h6 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        JS animation (<code>.collapsing</code> + <code>scrollHeight</code>)
+      </h6>
+      <div class="mb-2">
+        <button class="btn btn-sm btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#demo-bs-1" aria-expanded="false">
+          Click to expand (Bootstrap)
+        </button>
+        <div class="collapse" id="demo-bs-1">
+          <div class="card card-body mt-1">This content is animated by Bootstrap&rsquo;s JavaScript. It reads <code>scrollHeight</code> to calculate height, sets an inline <code>style.height</code>, adds the <code>.collapsing</code> class, then waits for <code>transitionend</code> to swap to <code>.collapse.show</code>.</div>
+        </div>
+      </div>
+      <div class="mb-2">
+        <button class="btn btn-sm btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#demo-bs-2" aria-expanded="false">
+          Another item (Bootstrap)
+        </button>
+        <div class="collapse" id="demo-bs-2">
+          <div class="card card-body mt-1">Second collapsible item. Each toggle triggers a synchronous layout reflow (<code>scrollHeight</code> read), multiple class changes, and inline style mutations.</div>
+        </div>
+      </div>
+      <div class="mb-2">
+        <button class="btn btn-sm btn-outline-secondary w-100 text-start" data-bs-toggle="collapse" data-bs-target="#demo-bs-3" aria-expanded="false">
+          Third item (Bootstrap)
+        </button>
+        <div class="collapse" id="demo-bs-3">
+          <div class="card card-body mt-1">Third item. Bootstrap Collapse: 270 lines of JS, plus BaseComponent, EventHandler, and SelectorEngine dependencies.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Native <details> animated with CSS only -->
+    <div class="col-lg-6 mb-4">
+      <h6 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        CSS-only animation (<code>::details-content</code>)
+      </h6>
+      <style>
+        /* Scoped to live example only — NOT applied to benchmark test items */
+        #live-example details {
+          /* Required: allows transition between block-size: 0 and block-size: auto */
+          interpolate-size: allow-keywords;
+        }
+        #live-example details::details-content {
+          transition: block-size 0.35s ease, content-visibility 0.35s ease allow-discrete;
+          block-size: 0;
+          overflow: hidden;
+        }
+        #live-example details[open]::details-content {
+          block-size: auto;
+        }
+      </style>
+      <details class="mb-2">
+        <summary class="btn btn-sm btn-outline-secondary w-100 text-start">Click to expand (Native)</summary>
+        <div class="card card-body mt-1">This content is animated by <strong>pure CSS</strong>. The <code>::details-content</code> pseudo-element transitions <code>block-size</code> from <code>0</code> to <code>auto</code>. Zero JavaScript. The browser handles everything: state management, accessibility, keyboard support.</div>
+      </details>
+      <details class="mb-2">
+        <summary class="btn btn-sm btn-outline-secondary w-100 text-start">Another item (Native)</summary>
+        <div class="card card-body mt-1">Second item. No <code>scrollHeight</code> reads, no forced reflows, no class toggling, no inline styles. The browser&rsquo;s CSS engine interpolates <code>block-size: 0</code> &rarr; <code>block-size: auto</code> natively.</div>
+      </details>
+      <details class="mb-2">
+        <summary class="btn btn-sm btn-outline-secondary w-100 text-start">Third item (Native)</summary>
+        <div class="card card-body mt-1">Third item. Total JavaScript required: <strong>0 lines</strong>. Just 6 lines of CSS on <code>::details-content</code> to match Bootstrap&rsquo;s animation.</div>
+      </details>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">CSS used for native animation (entire implementation)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>details {
+  /* Required: enables transition between 0 and auto */
+  interpolate-size: allow-keywords;
+}
+details::details-content {
+  transition: block-size 0.35s ease,
+              content-visibility 0.35s ease allow-discrete;
+  block-size: 0;
+  overflow: hidden;
+}
+details[open]::details-content {
+  block-size: auto;
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only).
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const ITEM_COUNT = 50;
+  const CYCLE_COUNT = 100;
+  // Bootstrap 5.3.8: collapse.js (8.6 KB)
+  const BS_COLLAPSE_JS_SIZE = 8838;
+
+  // ── Generate Items ──────────────────────────────────────────────────
+
+  function generateBootstrapItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < ITEM_COUNT; i++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-2';
+
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-sm btn-outline-secondary w-100 text-start';
+      btn.setAttribute('data-bs-toggle', 'collapse');
+      btn.setAttribute('data-bs-target', `#bs-collapse-${i}`);
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', `bs-collapse-${i}`);
+      btn.textContent = `Collapse Item #${i + 1}`;
+
+      const collapseDiv = document.createElement('div');
+      collapseDiv.className = 'collapse';
+      collapseDiv.id = `bs-collapse-${i}`;
+
+      const body = document.createElement('div');
+      body.className = 'card card-body mt-1';
+      body.textContent = `Content for item #${i + 1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.`;
+
+      collapseDiv.appendChild(body);
+      wrapper.appendChild(btn);
+      wrapper.appendChild(collapseDiv);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < ITEM_COUNT; i++) {
+      const details = document.createElement('details');
+      details.className = 'mb-2';
+      details.id = `native-details-${i}`;
+
+      const summary = document.createElement('summary');
+      summary.className = 'btn btn-sm btn-outline-secondary w-100 text-start';
+      summary.textContent = `Collapse Item #${i + 1}`;
+
+      const body = document.createElement('div');
+      body.className = 'card card-body mt-1';
+      body.textContent = `Content for item #${i + 1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.`;
+
+      details.appendChild(summary);
+      details.appendChild(body);
+      frag.appendChild(details);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapItems(bsContainer);
+  generateNativeItems(nativeContainer);
+
+  // ── UI helpers ──────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ──────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ───────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions + override Bootstrap Collapse internals
+    document.documentElement.classList.add('no-transitions');
+    const style = document.createElement('style');
+    style.id = 'no-anim';
+    style.textContent = `.collapsing { height: auto !important; } .collapse:not(.show) { display: none; } .collapse.show { display: block; }`;
+    document.head.appendChild(style);
+    await nextFrame();
+
+    // Collect elements
+    const bsCollapseDivs = bsContainer.querySelectorAll('.collapse');
+    const nativeDetails = nativeContainer.querySelectorAll('details');
+
+    // Ensure everything starts closed
+    bsCollapseDivs.forEach(el => {
+      el.classList.remove('show');
+    });
+    nativeDetails.forEach(el => {
+      el.removeAttribute('open');
+    });
+    await nextFrame();
+
+    // ── 1. Initialization benchmark ──────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    // Dispose any existing instances first
+    bsCollapseDivs.forEach(el => {
+      const existing = bootstrap.Collapse.getInstance(el);
+      if (existing) existing.dispose();
+    });
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = [];
+    bsCollapseDivs.forEach(el => {
+      bsInstances.push(new bootstrap.Collapse(el, { toggle: false }));
+    });
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native <details> needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Toggle benchmark ──────────────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap toggling...', 20);
+    await nextFrame();
+
+    const bsToggleStart = performance.now();
+
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let i = 0; i < bsInstances.length; i++) {
+        bsInstances[i].show();
+      }
+      for (let i = 0; i < bsInstances.length; i++) {
+        bsInstances[i].hide();
+      }
+    }
+
+    const bsToggleTime = performance.now() - bsToggleStart;
+
+    setProgress('Benchmarking: Native toggling...', 60);
+    await nextFrame();
+
+    const nativeToggleStart = performance.now();
+
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let i = 0; i < nativeDetails.length; i++) {
+        nativeDetails[i].setAttribute('open', '');
+      }
+      for (let i = 0; i < nativeDetails.length; i++) {
+        nativeDetails[i].removeAttribute('open');
+      }
+    }
+
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+
+    // ── 3. Clean up ──────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    document.getElementById('no-anim').remove();
+    bsInstances.forEach(inst => inst.hide());
+    nativeDetails.forEach(el => el.removeAttribute('open'));
+
+    // ── 4. Display results ───────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsToggleTime);
+    resToggleNative.textContent = formatMs(nativeToggleTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsToggleTime, nativeToggleTime);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_COLLAPSE_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_COLLAPSE_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>

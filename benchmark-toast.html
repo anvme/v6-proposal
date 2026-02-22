@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap Toast JS vs Native Popover API</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    /* Native toast styling for preview — use popover in top layer, styled like BS toast */
+    .native-toast-preview[popover] {
+      inset: auto;
+      margin: 0;
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Toast Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 Toast JS (class toggler + timer + 41 KB infra) vs Native Popover API (<code>popover="manual"</code>)</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 20 toast elements with identical content.
+        The benchmark creates Bootstrap Toast instances (init cost), then shows and hides
+        all 20 toasts for 100 cycles (2,000 show + 2,000 hide operations per section). DOM mutations
+        are counted via <code>MutationObserver</code>. CSS transitions are disabled during the run
+        so we measure raw JS overhead, not animation time.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/mdn-html_global_attributes_popover" target="_blank" class="badge text-bg-secondary text-decoration-none">Popover API</a>
+        <a href="https://caniuse.com/mdn-css_at-rules_starting-style" target="_blank" class="badge text-bg-secondary text-decoration-none">@starting-style</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.Toast</code> &mdash; manages <code>.show</code>/<code>.showing</code> classes, fires 4 lifecycle events, tracks hover/focus for auto-hide pause. Requires 9 JS dependency files (41 KB).</p>
+          <button class="btn btn-outline-primary btn-sm" id="preview-bs-show">Show Toast (Bootstrap)</button>
+          <div class="toast-container position-fixed top-0 end-0 p-3" id="preview-bs-container">
+            <div class="toast" id="preview-bs-toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+              <div class="toast-header">
+                <strong class="me-auto">Bootstrap Toast</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+              <div class="toast-body">Hello from Bootstrap Toast JS.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>popover="manual"</code> &mdash; element in top layer, no light-dismiss. Show via <code>showPopover()</code>, dismiss via <code>popovertarget</code>. Zero initialization, zero framework JS.</p>
+          <button class="btn btn-outline-success btn-sm" popovertarget="preview-native-toast">Show Toast (Native)</button>
+          <div popover="manual" id="preview-native-toast" class="native-toast-preview">
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="toast-header">
+                <strong class="me-auto">Native Toast</strong>
+                <button type="button" class="btn-close" popovertarget="preview-native-toast" popovertargetaction="hide" aria-label="Close"></button>
+              </div>
+              <div class="toast-body">Hello from native Popover API. Zero JS.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap Toast</th>
+              <th style="width: 35%;">Native Popover</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (20 instances)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Show/Hide time (100 cycles &times; 20 items)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">DOM mutations (100 cycles &times; 20 items)</td>
+              <td class="font-monospace fw-semibold" id="res-dom-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-dom-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (20 instances)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/toast.js" target="_blank">toast.js</a> <span class="text-body-tertiary">(6.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/base-component.js" target="_blank">base-component</a> <span class="text-body-tertiary">(2.8 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/event-handler.js" target="_blank">event-handler</a> <span class="text-body-tertiary">(9.2 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/manipulator.js" target="_blank">manipulator</a> <span class="text-body-tertiary">(2.3 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/data.js" target="_blank">data</a> <span class="text-body-tertiary">(2.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/selector-engine.js" target="_blank">selector-engine</a> <span class="text-body-tertiary">(4.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/index.js" target="_blank">util</a> <span class="text-body-tertiary">(9.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/config.js" target="_blank">config</a> <span class="text-body-tertiary">(2.5 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/component-functions.js" target="_blank">component-functions</a> <span class="text-body-tertiary">(2.0 KB)</span>
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Test Items -->
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">20 items &mdash; <code>bootstrap.Toast</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">20 items &mdash; <code>popover="manual"</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Difference Alert -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>Key difference:</strong> Bootstrap Toast is a <strong>class toggler</strong> backed by 41 KB
+        of JavaScript infrastructure (custom event system, data store, config parser, DOM manipulation utils,
+        jQuery compatibility layer). It adds/removes <code>.show</code> and <code>.showing</code> CSS classes,
+        manages a timer for auto-hide, and tracks mouse/keyboard interaction to pause dismissal.
+        The native Popover API achieves the same show/hide behavior with <strong>zero initialization</strong>
+        &mdash; <code>showPopover()</code> moves the element to the top layer, <code>hidePopover()</code>
+        removes it. Dismiss buttons work via the declarative <code>popovertarget</code> attribute. No classes,
+        no events, no timers needed.
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Card -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native toast using Popover API (entire implementation)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- Toast element --&gt;
+&lt;div popover="manual" id="my-toast" class="toast-styled"&gt;
+  &lt;div class="header"&gt;
+    Notification
+    &lt;button popovertarget="my-toast"
+            popovertargetaction="hide"&gt;&amp;times;&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div class="body"&gt;Message content here.&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- Show button --&gt;
+&lt;button popovertarget="my-toast"&gt;Show Toast&lt;/button&gt;
+
+&lt;!-- Optional: auto-hide with minimal JS --&gt;
+&lt;script&gt;
+  // Only needed if you want auto-dismiss
+  toast.addEventListener('toggle', e =&gt; {
+    if (e.newState === 'open')
+      setTimeout(() =&gt; toast.hidePopover(), 5000);
+  });
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only). DOM mutations counted via <code>MutationObserver</code>.
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const ITEM_COUNT = 20;
+  const CYCLE_COUNT = 100;
+  // Bootstrap 5.3.8: toast.js + 8 dependency files (40.2 KB)
+  const BS_TOAST_JS_SIZE = 41148;
+
+  // ── Preview setup ───────────────────────────────────────────────────
+
+  const previewBsToast = document.getElementById('preview-bs-toast');
+  const bsToastInstance = new bootstrap.Toast(previewBsToast);
+  document.getElementById('preview-bs-show').addEventListener('click', () => {
+    bsToastInstance.show();
+  });
+
+  // ── Generate Items ──────────────────────────────────────────────────
+
+  function generateBootstrapItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < ITEM_COUNT; i++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-2';
+
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.id = `bs-toast-${i}`;
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+
+      const header = document.createElement('div');
+      header.className = 'toast-header';
+      header.innerHTML = `<strong class="me-auto">Toast #${i + 1}</strong><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>`;
+
+      const body = document.createElement('div');
+      body.className = 'toast-body';
+      body.textContent = `Notification message #${i + 1}. This is a toast notification content.`;
+
+      toast.appendChild(header);
+      toast.appendChild(body);
+      wrapper.appendChild(toast);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < ITEM_COUNT; i++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-2';
+
+      const toast = document.createElement('div');
+      toast.setAttribute('popover', 'manual');
+      toast.id = `native-toast-${i}`;
+      toast.className = 'toast';
+      toast.style.cssText = 'inset: auto; margin: 0; padding: 0;';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+
+      const header = document.createElement('div');
+      header.className = 'toast-header';
+      header.innerHTML = `<strong class="me-auto">Toast #${i + 1}</strong><button type="button" class="btn-close" popovertarget="native-toast-${i}" popovertargetaction="hide" aria-label="Close"></button>`;
+
+      const body = document.createElement('div');
+      body.className = 'toast-body';
+      body.textContent = `Notification message #${i + 1}. This is a toast notification content.`;
+
+      toast.appendChild(header);
+      toast.appendChild(body);
+      wrapper.appendChild(toast);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapItems(bsContainer);
+  generateNativeItems(nativeContainer);
+
+  // ── UI helpers ──────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ──────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ───────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions
+    document.documentElement.classList.add('no-transitions');
+    await nextFrame();
+
+    // Collect elements
+    const bsToasts = bsContainer.querySelectorAll('.toast');
+    const nativeToasts = nativeContainer.querySelectorAll('[popover]');
+
+    // Ensure everything starts hidden
+    bsToasts.forEach(el => {
+      el.classList.remove('show', 'showing');
+    });
+    nativeToasts.forEach(el => {
+      try { el.hidePopover(); } catch {}
+    });
+    await nextFrame();
+
+    // ── 1. Initialization benchmark ──────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    // Dispose any existing instances first
+    bsToasts.forEach(el => {
+      const existing = bootstrap.Toast.getInstance(el);
+      if (existing) existing.dispose();
+    });
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = [];
+    bsToasts.forEach(el => {
+      bsInstances.push(new bootstrap.Toast(el, { autohide: false, animation: false }));
+    });
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const nativeInitStart = performance.now();
+    // Native popover needs no JS initialization
+    const nativeInitTime = performance.now() - nativeInitStart;
+    const nativeInitMemDelta = 0;
+
+    // ── 2. Toggle benchmark with DOM mutation counting ───────────────
+
+    setProgress('Benchmarking: Bootstrap show/hide...', 20);
+    await nextFrame();
+
+    // BS toggle + mutation count
+    let bsMutationCount = 0;
+    const bsObserver = new MutationObserver(mutations => {
+      bsMutationCount += mutations.length;
+    });
+    bsObserver.observe(bsContainer, { attributes: true, childList: true, subtree: true });
+
+    const bsToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let i = 0; i < bsInstances.length; i++) {
+        bsInstances[i].show();
+      }
+      for (let i = 0; i < bsInstances.length; i++) {
+        bsInstances[i].hide();
+      }
+    }
+    const bsToggleTime = performance.now() - bsToggleStart;
+    // Flush pending mutation records (callback is async, won't fire during sync loop)
+    bsMutationCount += bsObserver.takeRecords().length;
+    bsObserver.disconnect();
+
+    setProgress('Benchmarking: Native show/hide...', 60);
+    await nextFrame();
+
+    // Native toggle + mutation count
+    let nativeMutationCount = 0;
+    const nativeObserver = new MutationObserver(mutations => {
+      nativeMutationCount += mutations.length;
+    });
+    nativeObserver.observe(nativeContainer, { attributes: true, childList: true, subtree: true });
+
+    const nativeToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let i = 0; i < nativeToasts.length; i++) {
+        nativeToasts[i].showPopover();
+      }
+      for (let i = 0; i < nativeToasts.length; i++) {
+        nativeToasts[i].hidePopover();
+      }
+    }
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+    // Flush pending mutation records
+    nativeMutationCount += nativeObserver.takeRecords().length;
+    nativeObserver.disconnect();
+
+    // ── 3. Clean up ──────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    bsInstances.forEach(inst => { try { inst.hide(); } catch {} });
+    nativeToasts.forEach(el => { try { el.hidePopover(); } catch {} });
+
+    // ── 4. Display results ───────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsToggleTime);
+    resToggleNative.textContent = formatMs(nativeToggleTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsToggleTime, nativeToggleTime);
+
+    const resDomBs = document.getElementById('res-dom-bs');
+    const resDomNative = document.getElementById('res-dom-native');
+    resDomBs.textContent = formatNumber(bsMutationCount);
+    resDomNative.textContent = formatNumber(nativeMutationCount);
+    markWinnerLoser(resDomBs, resDomNative, bsMutationCount, nativeMutationCount);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_TOAST_JS_SIZE);
+    resSizeNative.textContent = '0 B';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_TOAST_JS_SIZE, 0);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>
