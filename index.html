@@ -254,6 +254,74 @@
           </div>
         </div>
       </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title"><code>@starting-style</code></h5>
+            <p class="card-text">Define starting values for CSS transitions when elements first appear &mdash; fade-in popovers, slide-in dialogs, animate from <code>display:none</code>. Zero animation JS.</p>
+            <p class="text-body-secondary small">Replaces: <code>.fade</code> + <code>.show</code> JS class toggling in Modal, Offcanvas, Toast</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline 2024</span>
+            <div class="d-flex gap-2">
+              <a href="demo-starting-style.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/?search=%40starting-style" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title"><code>:has()</code> CSS Selector</h5>
+            <p class="card-text">Select parent elements based on their children &mdash; the &ldquo;parent selector&rdquo; CSS never had. Replaces JS DOM queries and class toggling.</p>
+            <p class="text-body-secondary small">Replaces: JS form validation, parent state toggling, layout detection</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline 2023</span>
+            <div class="d-flex gap-2">
+              <a href="demo-css-has-selector.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/css-has" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title"><code>content-visibility: auto</code></h5>
+            <p class="card-text">Skip rendering offscreen content until the user scrolls to it. Two CSS properties replace <code>IntersectionObserver</code> boilerplate entirely.</p>
+            <p class="text-body-secondary small">Replaces: IntersectionObserver (~50&ndash;100 lines), virtual scrolling libraries</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-success">Baseline 2024</span>
+            <div class="d-flex gap-2">
+              <a href="demo-content-visibility.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/css-content-visibility" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Navigation API</h5>
+            <p class="card-text">A modern replacement for the History API &mdash; intercept, manage, and navigate SPA &ldquo;pages&rdquo; with a single event listener. No router library needed.</p>
+            <p class="text-body-secondary small">Replaces: History API pushState/popstate, SPA router libraries</p>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-warning text-dark">Baseline 2025</span>
+            <div class="d-flex gap-2">
+              <a href="demo-navigation-api.html" class="btn btn-primary btn-sm">View Demo</a>
+              <a href="https://caniuse.com/?search=navigation-api" target="_blank" class="btn btn-outline-secondary btn-sm">caniuse</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <hr class="my-5">

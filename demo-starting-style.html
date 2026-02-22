@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: @starting-style — Entry Transitions Without JS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* ── Demo 1: Popover fade-in ── */
+    [popover] {
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.3s ease, transform 0.3s ease,
+                  display 0.3s allow-discrete, overlay 0.3s allow-discrete;
+    }
+    [popover]:popover-open {
+      opacity: 1;
+      transform: scale(1);
+    }
+    @starting-style {
+      [popover]:popover-open {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+    }
+
+    /* ── Demo 2: New DOM element entry ── */
+    .entry-item {
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    @starting-style {
+      .entry-item {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+    }
+    /* After browser applies first style update, transition to visible */
+    .entry-item {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ── Demo 3: Element from display:none ── */
+    .toggle-box {
+      display: none;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease,
+                  display 0.3s allow-discrete;
+    }
+    .toggle-box.visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @starting-style {
+      .toggle-box.visible {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">@starting-style</h1>
+      <p class="lead text-body-secondary">Define starting values for CSS transitions when elements first appear &mdash; enabling fade-ins and slide-ins for popovers, newly inserted DOM elements, and <code>display:none</code> toggles. Pure CSS, zero animation JS.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> The <code>@starting-style</code> at-rule defines the initial property values
+        an element transitions <em>from</em> when it first receives styles. Combined with
+        <code>transition-behavior: allow-discrete</code>, it enables smooth entry transitions for elements
+        entering the top layer or toggling <code>display</code>. This replaces Bootstrap&rsquo;s
+        <code>.fade</code> + <code>.show</code> JS class toggling entirely.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/?search=%40starting-style" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: @starting-style</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Popover Fade-in -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Popover Fade-in &mdash; <code>[popover]:popover-open</code></h4>
+      <p class="text-body-secondary">Click any button to show a popover that fades in with <code>@starting-style { opacity: 0; transform: scale(0.9) }</code>. Click again or click outside to dismiss &mdash; it fades out too. Zero JS animation code.</p>
+      <div class="d-flex flex-wrap gap-3">
+        <button class="btn btn-primary" popovertarget="pop-1">Show Popover</button>
+        <div id="pop-1" popover class="bg-body border rounded shadow p-3" style="max-width: 280px;">
+          <strong>Popover content</strong>
+          <p class="mb-0 small text-body-secondary">This faded in with <code>@starting-style</code>. No JS animation.</p>
+        </div>
+
+        <button class="btn btn-success" popovertarget="pop-2">Another Popover</button>
+        <div id="pop-2" popover class="bg-body border rounded shadow p-3" style="max-width: 280px;">
+          <strong>Second popover</strong>
+          <p class="mb-0 small text-body-secondary">Same CSS transition rules apply to all <code>[popover]</code> elements.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 2: New DOM Element Entry -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. New DOM Element Entry &mdash; <code>@starting-style</code> on insert</h4>
+      <p class="text-body-secondary">Click the button to dynamically insert a new list item into the DOM. Each item slides in from the left using <code>@starting-style</code> &mdash; the browser transitions from the starting values on first style update. No JS animation, no <code>requestAnimationFrame</code>.</p>
+      <button class="btn btn-outline-primary" id="add-item-btn">Add Item</button>
+      <button class="btn btn-outline-secondary btn-sm" id="clear-items-btn">Clear All</button>
+      <ul class="list-group mt-3" id="entry-list"></ul>
+    </div>
+  </div>
+
+  <!-- Demo 3: Element from display:none -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. From <code>display:none</code> &mdash; <code>transition-behavior: allow-discrete</code></h4>
+      <p class="text-body-secondary">Toggle an element between <code>display: none</code> and <code>display: block</code> with a smooth fade + slide. Previously impossible without JS animation &mdash; now one CSS rule.</p>
+      <button class="btn btn-outline-success" id="toggle-btn">Toggle Element</button>
+      <div class="toggle-box mt-3 p-4 bg-success-subtle border border-success rounded">
+        <h5 class="text-success">Visible!</h5>
+        <p class="mb-0 text-body-secondary">This element transitioned from <code>display: none</code> to <code>display: block</code> using <code>@starting-style</code> and <code>transition-behavior: allow-discrete</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 4: Code Comparison -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Code Comparison &mdash; Bootstrap JS vs <code>@starting-style</code></h4>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card border-danger">
+            <div class="card-header text-bg-danger">Bootstrap JS: .fade + .show</div>
+            <div class="card-body">
+<pre class="mb-0"><code>/* _transitions.scss */
+.fade {
+  transition: opacity .15s linear;
+  &amp;:not(.show) { opacity: 0; }
+}
+
+/* js/src/util/index.js */
+const reflow = element =&gt; {
+  element.offsetHeight;
+};
+
+const executeAfterTransition =
+  (callback, transitionElement) =&gt; {
+  const duration =
+    getTransitionDurationFromElement(
+      transitionElement
+    ) + 5;
+  let called = false;
+  const handler = ({ target }) =&gt; {
+    if (target !== transitionElement)
+      return;
+    called = true;
+    transitionElement
+      .removeEventListener(
+        'transitionend', handler
+      );
+    callback();
+  };
+  transitionElement
+    .addEventListener(
+      'transitionend', handler
+    );
+  setTimeout(() =&gt; {
+    if (!called)
+      transitionElement
+        .dispatchEvent(
+          new Event('transitionend')
+        );
+  }, duration);
+};
+
+/* js/src/tooltip.js — show() */
+tip.classList.add('show');
+this._queueCallback(
+  complete, this.tip,
+  this._isAnimated()
+);
+
+/* js/src/tooltip.js — hide() */
+tip.classList.remove('show');
+this._queueCallback(
+  complete, this.tip,
+  this._isAnimated()
+);</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header text-bg-success">Native: @starting-style (zero JS)</div>
+            <div class="card-body">
+<pre class="mb-0"><code>/* CSS only — no JS files needed */
+[popover] {
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity .3s ease,
+    transform .3s ease,
+    display .3s allow-discrete,
+    overlay .3s allow-discrete;
+}
+
+[popover]:popover-open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  [popover]:popover-open {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* No reflow hack needed.
+   No transitionend listener.
+   No setTimeout fallback.
+   No classList.add/remove.
+   The browser handles entry
+   and exit transitions
+   from these CSS rules alone. */</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: @starting-style (key code)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- HTML: button + popover --&gt;
+&lt;button popovertarget="my-pop"&gt;Show&lt;/button&gt;
+&lt;div id="my-pop" popover&gt;Content&lt;/div&gt;
+
+&lt;style&gt;
+  /* Closed state (also exit transition target) */
+  [popover] {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity .3s, transform .3s,
+      display .3s allow-discrete,
+      overlay .3s allow-discrete;
+  }
+
+  /* Open state */
+  [popover]:popover-open {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Entry transition: start from these values */
+  @starting-style {
+    [popover]:popover-open {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+&lt;/style&gt;
+
+&lt;!-- DOM element entry animation --&gt;
+.entry-item {
+  opacity: 1; transform: translateX(0);
+  transition: opacity .3s, transform .3s;
+}
+@starting-style {
+  .entry-item {
+    opacity: 0; transform: translateX(-20px);
+  }
+}
+
+&lt;!-- display:none toggle --&gt;
+.box { display: none; opacity: 0;
+  transition: opacity .3s, display .3s allow-discrete; }
+.box.visible { display: block; opacity: 1; }
+@starting-style { .box.visible { opacity: 0; } }</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. <code>@starting-style</code> uses zero JavaScript for animations &mdash; replaces <code>.fade</code> + <code>.show</code> class toggling entirely.</small>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Demo 2: Add new DOM elements with entry animation
+  var counter = 0;
+  var list = document.getElementById('entry-list');
+  document.getElementById('add-item-btn').addEventListener('click', function () {
+    counter++;
+    var li = document.createElement('li');
+    li.className = 'list-group-item entry-item';
+    li.textContent = 'Item #' + counter + ' \u2014 inserted into DOM, animated by @starting-style';
+    list.appendChild(li);
+  });
+  document.getElementById('clear-items-btn').addEventListener('click', function () {
+    list.innerHTML = '';
+    counter = 0;
+  });
+
+  // Demo 3: Toggle display:none element
+  var box = document.querySelector('.toggle-box');
+  document.getElementById('toggle-btn').addEventListener('click', function () {
+    box.classList.toggle('visible');
+  });
+})();
+</script>
+</body>
+</html>

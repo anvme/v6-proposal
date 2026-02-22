@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: content-visibility: auto — Skip Offscreen Rendering</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* ── content-visibility applied to list items and cards ── */
+    .cv-item {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 60px;
+    }
+    .cv-card {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 400px;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">content-visibility: auto</h1>
+      <p class="lead text-body-secondary">Skip rendering offscreen content until the user scrolls to it &mdash; the browser does the lazy-rendering automatically. Two CSS properties replace <code>IntersectionObserver</code> boilerplate entirely.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> Set <code>content-visibility: auto</code> on elements that are offscreen.
+        The browser skips their layout and paint until they enter the viewport.
+        <code>contain-intrinsic-size</code> provides a placeholder size so the scrollbar stays stable.
+        This replaces IntersectionObserver-based lazy rendering (~50&ndash;100 lines of JS) with 2 lines of CSS.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/css-content-visibility" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: content-visibility</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Long List -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Long List &mdash; 1000 items with <code>content-visibility: auto</code></h4>
+      <p class="text-body-secondary">1000 list-group items rendered with <code>content-visibility: auto; contain-intrinsic-size: auto 60px</code>. Scroll down &mdash; offscreen items skip rendering until visible. Render time measured with Performance API.</p>
+      <div class="d-flex gap-3 mb-3">
+        <button class="btn btn-primary" id="gen-list-btn">Generate 1000 Items</button>
+        <span class="badge text-bg-light text-dark align-self-center" id="list-time"></span>
+      </div>
+      <div id="list-container" class="border rounded" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <!-- Demo 2: Heavy Card Grid -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Heavy Card Grid &mdash; 100 cards with <code>content-visibility: auto</code></h4>
+      <p class="text-body-secondary">100 cards with text content. Each card uses <code>content-visibility: auto; contain-intrinsic-size: auto 400px</code>. Offscreen cards skip layout/paint entirely.</p>
+      <div class="d-flex gap-3 mb-3">
+        <button class="btn btn-success" id="gen-cards-btn">Generate 100 Cards</button>
+        <span class="badge text-bg-light text-dark align-self-center" id="cards-time"></span>
+      </div>
+      <div id="cards-container" class="row g-3" style="max-height: 500px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <!-- Demo 3: Code Comparison -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Code Comparison &mdash; IntersectionObserver vs <code>content-visibility</code></h4>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card border-danger">
+            <div class="card-header text-bg-danger">JS: IntersectionObserver</div>
+            <div class="card-body">
+<pre class="mb-0"><code>// Create observer
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList
+          .add('visible');
+        renderContent(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  },
+  { rootMargin: '100px' }
+);
+
+// Observe all items
+document.querySelectorAll('.lazy-item')
+  .forEach(item => {
+    observer.observe(item);
+  });
+
+// Render function
+function renderContent(el) {
+  el.innerHTML = buildContent();
+  el.style.minHeight = '';
+}
+
+// Cleanup on page unload
+window.addEventListener('unload', () => {
+  observer.disconnect();
+});</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header text-bg-success">CSS: content-visibility</div>
+            <div class="card-body">
+<pre class="mb-0"><code>/* That's it. Two CSS properties. */
+.item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60px;
+}
+
+/* The browser automatically:
+   - Skips layout for offscreen items
+   - Skips paint for offscreen items
+   - Renders when scrolled into view
+   - Preserves scrollbar stability
+   - No JS, no observer, no cleanup */</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 4: Performance Metrics -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Performance Metrics</h4>
+      <p class="text-body-secondary">Generate both lists above to see measured render times. <code>content-visibility: auto</code> reduces initial paint because offscreen elements are skipped.</p>
+      <table class="table table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>Test</th>
+            <th>Items</th>
+            <th>DOM Insert Time</th>
+            <th>CSS Applied</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Long List</td>
+            <td>1000</td>
+            <td id="metric-list">&#8212;</td>
+            <td><code>content-visibility: auto</code></td>
+          </tr>
+          <tr>
+            <td>Card Grid</td>
+            <td>100</td>
+            <td id="metric-cards">&#8212;</td>
+            <td><code>content-visibility: auto</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: content-visibility (key code)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;style&gt;
+  .list-item {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 60px;
+  }
+  .card-item {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px;
+  }
+&lt;/style&gt;
+
+&lt;!-- Just add the class. No JS needed. --&gt;
+&lt;div class="list-item"&gt;...&lt;/div&gt;
+&lt;div class="card-item"&gt;...&lt;/div&gt;
+
+&lt;!-- The browser automatically skips rendering
+     for offscreen elements until they scroll
+     into view. Scrollbar stays stable thanks
+     to contain-intrinsic-size. --&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. <code>content-visibility: auto</code> replaces IntersectionObserver lazy rendering with 2 CSS properties &mdash; zero JavaScript.</small>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Demo 1: Generate 1000 list items
+  document.getElementById('gen-list-btn').addEventListener('click', function () {
+    var container = document.getElementById('list-container');
+    container.innerHTML = '';
+    var fragment = document.createDocumentFragment();
+    var ul = document.createElement('ul');
+    ul.className = 'list-group list-group-flush';
+
+    var t0 = performance.now();
+    for (var i = 1; i <= 1000; i++) {
+      var li = document.createElement('li');
+      li.className = 'list-group-item cv-item';
+      li.textContent = 'List item #' + i + ' \u2014 content-visibility: auto skips rendering when offscreen';
+      ul.appendChild(li);
+    }
+    fragment.appendChild(ul);
+    container.appendChild(fragment);
+    var t1 = performance.now();
+
+    var ms = (t1 - t0).toFixed(2) + ' ms';
+    document.getElementById('list-time').textContent = 'DOM insert: ' + ms;
+    document.getElementById('metric-list').textContent = ms;
+  });
+
+  // Demo 2: Generate 100 cards
+  document.getElementById('gen-cards-btn').addEventListener('click', function () {
+    var container = document.getElementById('cards-container');
+    container.innerHTML = '';
+    var fragment = document.createDocumentFragment();
+
+    var t0 = performance.now();
+    for (var i = 1; i <= 100; i++) {
+      var col = document.createElement('div');
+      col.className = 'col-md-6 col-lg-4';
+      col.innerHTML =
+        '<div class="card cv-card">' +
+          '<div class="card-body">' +
+            '<h5 class="card-title">Card #' + i + '</h5>' +
+            '<p class="card-text text-body-secondary">This card uses content-visibility: auto. If it is offscreen, the browser skips its layout and paint entirely. Scrollbar stability is maintained by contain-intrinsic-size: auto 400px.</p>' +
+            '<p class="card-text"><small class="text-body-secondary">Item ' + i + ' of 100</small></p>' +
+          '</div>' +
+        '</div>';
+      fragment.appendChild(col);
+    }
+    container.appendChild(fragment);
+    var t1 = performance.now();
+
+    var ms = (t1 - t0).toFixed(2) + ' ms';
+    document.getElementById('cards-time').textContent = 'DOM insert: ' + ms;
+    document.getElementById('metric-cards').textContent = ms;
+  });
+})();
+</script>
+</body>
+</html>

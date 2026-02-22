@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: Navigation API — SPA Routing Without Libraries</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Navigation API</h1>
+      <p class="lead text-body-secondary">A modern replacement for the History API &mdash; intercept, manage, and navigate between SPA &ldquo;pages&rdquo; with a single event listener. Replaces pushState/popstate/hashchange boilerplate entirely.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> The Navigation API provides <code>navigation.addEventListener('navigate', ...)</code>
+        to intercept all navigations in one place. Use <code>e.intercept()</code> to handle them as same-document
+        navigations, and <code>navigation.navigate(url, { state })</code> to push new entries.
+        Built-in <code>canGoBack</code>/<code>canGoForward</code> and <code>back()</code>/<code>forward()</code>
+        replace the History API entirely.
+      </div>
+      <div id="no-support-alert" class="alert alert-warning d-none" role="alert">
+        <strong>Browser not supported.</strong> The Navigation API requires a modern browser. This demo needs <code>window.navigation</code> to function.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/?search=navigation-api" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: Navigation API</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: SPA Navigation -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. SPA Navigation &mdash; single <code>navigate</code> event handler</h4>
+      <p class="text-body-secondary">Click the nav tabs to switch &ldquo;pages&rdquo;. Each click uses <code>navigation.navigate()</code> to push a URL, and a single <code>navigate</code> event handler switches the content panel. Check the browser URL bar &mdash; it updates without page reload.</p>
+      <ul class="nav nav-tabs mb-3" id="spa-nav">
+        <li class="nav-item">
+          <a class="nav-link active" href="#/home" data-page="home">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#/about" data-page="about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#/contact" data-page="contact">Contact</a>
+        </li>
+      </ul>
+      <div id="spa-content" class="border rounded p-4 bg-body-tertiary">
+        <div id="page-home">
+          <h5>Home</h5>
+          <p class="text-body-secondary mb-0">Welcome to the SPA home page. Navigation is handled by a single <code>navigate</code> event listener &mdash; no router library needed.</p>
+        </div>
+        <div id="page-about" class="d-none">
+          <h5>About</h5>
+          <p class="text-body-secondary mb-0">This is the about page. The browser back/forward buttons work because the Navigation API manages history entries natively.</p>
+        </div>
+        <div id="page-contact" class="d-none">
+          <h5>Contact</h5>
+          <p class="text-body-secondary mb-0">Contact page content. Each navigation creates a proper history entry with state &mdash; all via <code>navigation.navigate()</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 2: History State -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. History State &mdash; <code>navigation.updateCurrentEntry({ state })</code></h4>
+      <p class="text-body-secondary">Type in the form fields. State is saved to the current navigation entry via <code>updateCurrentEntry</code>. Navigate away and come back &mdash; the state is restored from <code>currentEntry.getState()</code>.</p>
+      <div class="border rounded p-4 bg-body-tertiary" style="max-width: 480px;">
+        <div class="mb-3">
+          <label class="form-label">Your Name</label>
+          <input type="text" class="form-control" id="state-name" placeholder="Type something...">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Favorite Color</label>
+          <input type="text" class="form-control" id="state-color" placeholder="e.g., blue">
+        </div>
+        <button class="btn btn-outline-primary btn-sm" id="save-state-btn">Save to Navigation State</button>
+        <button class="btn btn-outline-secondary btn-sm" id="load-state-btn">Load from State</button>
+        <div id="state-status" class="small text-body-secondary mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 3: Back/Forward Controls -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Back/Forward Controls &mdash; <code>canGoBack</code> / <code>canGoForward</code></h4>
+      <p class="text-body-secondary">Native navigation controls using <code>navigation.back()</code>, <code>navigation.forward()</code>, and the <code>canGoBack</code>/<code>canGoForward</code> properties. Buttons auto-disable when navigation is not possible.</p>
+      <div class="btn-group" role="group">
+        <button class="btn btn-outline-primary" id="nav-back-btn" disabled>&larr; Back</button>
+        <button class="btn btn-outline-primary" id="nav-forward-btn" disabled>Forward &rarr;</button>
+      </div>
+      <div class="mt-2">
+        <span class="small text-body-secondary" id="nav-entries-info">Navigate between pages above to build history entries.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 4: Code Comparison -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Code Comparison &mdash; History API vs Navigation API</h4>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card border-danger">
+            <div class="card-header text-bg-danger">History API</div>
+            <div class="card-body">
+<pre class="mb-0"><code>// Push state
+history.pushState(state, '', url);
+
+// Listen for back/forward
+window.addEventListener('popstate', e => {
+  renderPage(e.state);
+});
+
+// Intercept link clicks
+document.addEventListener('click', e => {
+  const link = e.target.closest('a');
+  if (!link) return;
+  if (link.origin !== location.origin)
+    return;
+  e.preventDefault();
+  history.pushState(
+    getState(link),
+    '',
+    link.href
+  );
+  renderPage(getState(link));
+});
+
+// No canGoBack/canGoForward
+// No navigation entries list
+// No intercept() for async
+// hashchange needed separately
+window.addEventListener(
+  'hashchange', handleHash
+);</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header text-bg-success">Navigation API</div>
+            <div class="card-body">
+<pre class="mb-0"><code>// One handler for everything
+navigation.addEventListener(
+  'navigate', e => {
+    if (!e.canIntercept) return;
+    const url = new URL(e.destination.url);
+    e.intercept({
+      handler() {
+        renderPage(url);
+      }
+    });
+  }
+);
+
+// Built-in back/forward
+navigation.back();
+navigation.forward();
+
+// Built-in state
+navigation.canGoBack;
+navigation.canGoForward;
+navigation.currentEntry.getState();
+navigation.entries();
+
+// That's it. No hashchange.
+// No link click interception.
+// No popstate. One event.</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: Navigation API (key code)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;script&gt;
+// Feature detection
+if (!window.navigation) {
+  alert('Navigation API not supported');
+}
+
+// Single navigate event handler
+navigation.addEventListener('navigate', e => {
+  if (!e.canIntercept) return;
+  if (!e.destination.sameDocument) return;
+
+  const url = new URL(e.destination.url);
+  e.intercept({
+    handler() {
+      // Switch page content based on URL
+      showPage(url.hash.slice(2) || 'home');
+    }
+  });
+});
+
+// Programmatic navigation with state
+navigation.navigate('#/about', {
+  state: { from: 'home' }
+});
+
+// Read state from current entry
+const state = navigation.currentEntry.getState();
+
+// Update state without navigation
+navigation.updateCurrentEntry({
+  state: { ...state, newField: 'value' }
+});
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. The Navigation API replaces History API pushState/popstate with a single event handler &mdash; no router libraries needed.</small>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Feature detection
+  if (!window.navigation) {
+    document.getElementById('no-support-alert').classList.remove('d-none');
+    return;
+  }
+
+  var pages = ['home', 'about', 'contact'];
+
+  function showPage(name) {
+    if (pages.indexOf(name) === -1) name = 'home';
+    pages.forEach(function (p) {
+      document.getElementById('page-' + p).classList.toggle('d-none', p !== name);
+    });
+    // Update active nav tab
+    document.querySelectorAll('#spa-nav .nav-link').forEach(function (link) {
+      link.classList.toggle('active', link.getAttribute('data-page') === name);
+    });
+    updateNavButtons();
+  }
+
+  function updateNavButtons() {
+    document.getElementById('nav-back-btn').disabled = !navigation.canGoBack;
+    document.getElementById('nav-forward-btn').disabled = !navigation.canGoForward;
+    var entries = navigation.entries();
+    document.getElementById('nav-entries-info').textContent =
+      'History entries: ' + entries.length +
+      ' | Current index: ' + navigation.currentEntry.index;
+  }
+
+  // Single navigate event handler — the core of the Navigation API
+  navigation.addEventListener('navigate', function (e) {
+    if (!e.canIntercept) return;
+    if (!e.destination.sameDocument) return;
+
+    var url = new URL(e.destination.url);
+    var page = url.hash.slice(2) || 'home'; // "#/about" -> "about"
+
+    e.intercept({
+      handler: function () {
+        showPage(page);
+      }
+    });
+  });
+
+  // Demo 1: Nav tab clicks
+  document.querySelectorAll('#spa-nav .nav-link').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      var page = link.getAttribute('data-page');
+      navigation.navigate('#/' + page);
+    });
+  });
+
+  // Demo 2: Save/load state
+  document.getElementById('save-state-btn').addEventListener('click', function () {
+    var name = document.getElementById('state-name').value;
+    var color = document.getElementById('state-color').value;
+    navigation.updateCurrentEntry({
+      state: { name: name, color: color }
+    });
+    document.getElementById('state-status').textContent =
+      'State saved: { name: "' + name + '", color: "' + color + '" }';
+  });
+
+  document.getElementById('load-state-btn').addEventListener('click', function () {
+    var state = navigation.currentEntry.getState();
+    if (state && (state.name || state.color)) {
+      document.getElementById('state-name').value = state.name || '';
+      document.getElementById('state-color').value = state.color || '';
+      document.getElementById('state-status').textContent =
+        'State loaded: { name: "' + (state.name || '') + '", color: "' + (state.color || '') + '" }';
+    } else {
+      document.getElementById('state-status').textContent = 'No state saved yet.';
+    }
+  });
+
+  // Demo 3: Back/Forward buttons
+  document.getElementById('nav-back-btn').addEventListener('click', function () {
+    navigation.back();
+  });
+  document.getElementById('nav-forward-btn').addEventListener('click', function () {
+    navigation.forward();
+  });
+
+  // Update buttons on entry change
+  navigation.addEventListener('currententrychange', function () {
+    updateNavButtons();
+  });
+
+  // Initial state
+  updateNavButtons();
+})();
+</script>
+</body>
+</html>

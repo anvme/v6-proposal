@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: :has() CSS Selector — Parent Selection Without JS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* ── Demo 1: Form validation via :has(:invalid) ── */
+    .demo-form:has(:invalid) {
+      border-color: var(--bs-danger) !important;
+    }
+    .demo-form:has(:invalid) .validation-warning {
+      display: block;
+    }
+    .demo-form:not(:has(:invalid)) .validation-warning {
+      display: none;
+    }
+    .demo-form:not(:has(:invalid)) .validation-success {
+      display: block;
+    }
+    .demo-form:has(:invalid) .validation-success {
+      display: none;
+    }
+
+    /* ── Demo 2: Card layout adaptation ── */
+    .demo-grid .card:has(img) {
+      grid-column: span 2;
+    }
+
+    /* ── Demo 3: Nav active state on container ── */
+    .demo-nav:has(.nav-link.active) {
+      box-shadow: 0 2px 0 0 var(--bs-primary);
+    }
+
+    /* ── Demo 4: Sibling-aware spacing ── */
+    .demo-headings h2:has(+ h3) {
+      margin-bottom: 0.25rem;
+      color: var(--bs-primary);
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">:has() CSS Selector</h1>
+      <p class="lead text-body-secondary">Select parent elements based on their children &mdash; the &ldquo;parent selector&rdquo; CSS never had. Replaces JS DOM queries and class toggling for validation, layout, and state propagation.</p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> <code>:has()</code> selects an element if any of the relative selectors
+        passed as arguments match. For example, <code>form:has(:invalid)</code> selects a <code>&lt;form&gt;</code>
+        that contains any invalid input &mdash; no JS <code>querySelectorAll</code> needed. This replaces
+        Bootstrap&rsquo;s <code>.was-validated</code> JS class toggling pattern.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/css-has" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: :has()</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 1: Form Validation -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. Form Validation &mdash; <code>form:has(:invalid)</code></h4>
+      <p class="text-body-secondary">The form border turns red and a warning appears when any field is invalid. Clear the required field or enter a valid email to see it turn green. Zero JS &mdash; replaces Bootstrap&rsquo;s <code>.was-validated</code> class.</p>
+      <form class="demo-form border rounded p-4" style="max-width: 480px; border-width: 2px !important; transition: border-color 0.2s;">
+        <div class="mb-3">
+          <label class="form-label">Name (required)</label>
+          <input type="text" class="form-control" required placeholder="Enter your name">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email (required)</label>
+          <input type="email" class="form-control" required placeholder="user@example.com">
+        </div>
+        <div class="validation-warning text-danger small fw-semibold">
+          &#9888; Form has invalid fields
+        </div>
+        <div class="validation-success text-success small fw-semibold">
+          &#10003; All fields valid
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Demo 2: Card Layout Adaptation -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Card Layout Adaptation &mdash; <code>.card:has(img)</code></h4>
+      <p class="text-body-secondary">Cards that contain an image automatically span 2 grid columns. No JS layout detection &mdash; pure CSS selector.</p>
+      <div class="demo-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Text Only</h5>
+            <p class="card-text text-body-secondary">A simple text card. Takes 1 column.</p>
+          </div>
+        </div>
+        <div class="card">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120'%3E%3Crect fill='%230d6efd' width='600' height='120'/%3E%3Ctext x='300' y='65' fill='white' text-anchor='middle' font-size='16' font-family='sans-serif'%3EImage Card%3C/text%3E%3C/svg%3E" class="card-img-top" alt="Placeholder">
+          <div class="card-body">
+            <h5 class="card-title">Card with Image</h5>
+            <p class="card-text text-body-secondary">This card has an <code>&lt;img&gt;</code>, so <code>:has(img)</code> makes it span 2 columns.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Another Text Card</h5>
+            <p class="card-text text-body-secondary">No image here. Single column.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo 3: Nav Active State -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Nav Active Highlight &mdash; <code>.nav:has(.nav-link.active)</code></h4>
+      <p class="text-body-secondary">Click a nav link to make it active. The nav container gets a bottom border highlight via <code>:has(.nav-link.active)</code>. The parent reacts to child state &mdash; no JS parent manipulation.</p>
+      <ul class="nav nav-pills demo-nav rounded p-2 bg-body-tertiary" style="transition: box-shadow 0.2s;">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-nav>Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-nav>Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-nav>Messages</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-nav>Settings</a>
+        </li>
+      </ul>
+      <p class="small text-body-secondary mt-2">Try removing all active states &mdash; the bottom highlight disappears because <code>:has(.nav-link.active)</code> no longer matches.</p>
+    </div>
+  </div>
+
+  <!-- Demo 4: Sibling-aware Spacing -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Sibling-aware Spacing &mdash; <code>h2:has(+ h3)</code></h4>
+      <p class="text-body-secondary">An <code>&lt;h2&gt;</code> followed immediately by an <code>&lt;h3&gt;</code> gets reduced margin and turns blue. The heading &ldquo;knows&rdquo; its next sibling via <code>:has(+ h3)</code>. No JS DOM walking.</p>
+      <div class="demo-headings border rounded p-4 bg-body-tertiary">
+        <h2>Section Title</h2>
+        <h3 class="text-body-secondary">Subtitle follows immediately</h3>
+        <p>The h2 above has reduced margin and primary color because <code>h2:has(+ h3)</code> matches.</p>
+
+        <h2>Standalone Section</h2>
+        <p>This h2 has no h3 sibling, so normal styling applies.</p>
+
+        <h2>Another Paired Section</h2>
+        <h3 class="text-body-secondary">Another subtitle</h3>
+        <p>Same reduced margin applied automatically.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Code -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Implementation: :has() selector (key code)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>/* Form validation — replaces .was-validated JS */
+form:has(:invalid) {
+  border-color: var(--bs-danger);
+}
+form:has(:invalid) .warning { display: block; }
+
+/* Layout adaptation — replaces JS layout detection */
+.card:has(img) {
+  grid-column: span 2;
+}
+
+/* Parent state from child — replaces JS parent manipulation */
+.nav:has(.nav-link.active) {
+  box-shadow: 0 2px 0 0 var(--bs-primary);
+}
+
+/* Sibling awareness — replaces JS DOM walking */
+h2:has(+ h3) {
+  margin-bottom: 0.25rem;
+  color: var(--bs-primary);
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN. <code>:has()</code> replaces JS DOM queries and class toggling for parent/sibling selection &mdash; zero JavaScript.</small>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Demo 3: Toggle active nav link (minimal interactivity)
+  document.querySelectorAll('[data-nav]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      // If already active, deactivate (to demo :has removal)
+      if (link.classList.contains('active')) {
+        link.classList.remove('active');
+      } else {
+        document.querySelectorAll('[data-nav]').forEach(function (l) {
+          l.classList.remove('active');
+        });
+        link.classList.add('active');
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
