@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo: Responsive Images — srcset, sizes &amp; &lt;picture&gt;</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .img-info-loaded {
+      font-family: var(--bs-font-monospace);
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">Responsive Images</h1>
+      <p class="lead text-body-secondary">
+        <code>&lt;picture&gt;</code>, <code>srcset</code>, and <code>sizes</code>
+        let the browser choose the optimal image for every device &mdash;
+        resolution, viewport size, and format. Zero JavaScript.
+        Bootstrap&rsquo;s <code>.img-fluid</code> only scales with CSS;
+        these native attributes optimize the <em>payload</em>.
+      </p>
+      <div class="alert alert-info" role="alert">
+        <strong>How it works:</strong> The browser evaluates <code>srcset</code> candidates
+        against the device pixel ratio and viewport width, then downloads only the best match.
+        <code>&lt;picture&gt;</code> adds art direction (different crops) and format negotiation
+        (AVIF &rarr; WebP &rarr; JPEG). The <code>&lt;img&gt;</code> fallback ensures
+        universal compatibility. All selection logic runs in the browser engine &mdash;
+        no JavaScript required.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="https://caniuse.com/?search=srcset" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: srcset &amp; sizes</a>
+        <a href="https://caniuse.com/picture" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: &lt;picture&gt;</a>
+        <a href="https://caniuse.com/loading-lazy-attr" target="_blank" class="badge text-bg-secondary text-decoration-none">caniuse: loading=lazy</a>
+        <a href="index.html" class="badge text-bg-primary text-decoration-none">&larr; Back to index</a>
+      </div>
+      <p class="small text-body-secondary">
+        Your device pixel ratio: <strong id="dpr-value"></strong>
+        &mdash; the browser uses this when choosing between <code>1x</code>, <code>2x</code>, <code>3x</code> candidates.
+      </p>
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered table-sm align-middle small mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>DPR</th>
+              <th>Device Examples</th>
+              <th>Ecosystem</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1x</strong></td>
+              <td>iPad 1/2, Galaxy Tab 2, iPhone 3GS, Blackberry Torch</td>
+              <td>Legacy mobile, standard 1080p desktop monitors, entry-level laptops</td>
+            </tr>
+            <tr>
+              <td><strong>1.5x</strong></td>
+              <td>Surface Pro 2/3/4, Surface Book, Kindle Fire HD, Galaxy S/S2</td>
+              <td>Windows convertible tablets, mid-tier Android</td>
+            </tr>
+            <tr>
+              <td><strong>2x</strong></td>
+              <td>iPhone 4/5/6/7/8, iPad Air/Pro, MacBook Retina, HTC Nexus 9</td>
+              <td>Mainstream Apple ecosystem, 4K desktop monitors</td>
+            </tr>
+            <tr>
+              <td><strong>3x</strong></td>
+              <td>iPhone X/11/12/13/14/15/16 Pro, iPhone Plus/Max, Galaxy S5</td>
+              <td>Premium Apple, premium Android handsets</td>
+            </tr>
+            <tr>
+              <td><strong>4x</strong></td>
+              <td>Galaxy S6/S7/S8/S9/S10, Galaxy Note 10+, LG G4/G5</td>
+              <td>Ultra-high-density flagship Android</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small text-body-secondary mt-2 mb-0">
+        <strong>Practical targeting:</strong> Only provide <code>1x</code>, <code>2x</code>, <code>3x</code> candidates.
+        Fractional DPRs (1.5x, 2.75x, etc.) are handled automatically &mdash; the browser
+        picks the next larger candidate and downsamples. Serving 4x assets yields
+        negligible visual gains with massive file size costs.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 1: The Problem -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">1. The Problem &mdash; One Image for All Devices</h4>
+      <p class="text-body-secondary">
+        A plain <code>&lt;img src="photo.jpg"&gt;</code> with Bootstrap&rsquo;s
+        <code>.img-fluid</code> scales the image <em>visually</em> via CSS
+        (<code>max-width: 100%; height: auto</code>), but the browser still downloads
+        the full-size file. On a 375px mobile screen, you load a 1920px image &mdash;
+        wasted bandwidth. On a 3x Retina display with a tiny source, you get a blurry mess.
+        No payload optimization at all.
+      </p>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card border-danger">
+            <div class="card-header text-bg-danger">Old Way: Single <code>&lt;img src&gt;</code></div>
+            <div class="card-body">
+<pre class="mb-0"><code>&lt;img
+  src="photo-1920.jpg"
+  class="img-fluid"
+  alt="A landscape photo"
+&gt;
+
+&lt;!-- Problems:
+  - Mobile downloads 1920px file (wasted bandwidth)
+  - 1x display: correct size, but 2x/3x are blurry
+  - No format optimization (JPEG only)
+  - No lazy loading
+  - No layout shift prevention
+  - .img-fluid is CSS scaling only —
+    no bandwidth saved --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header text-bg-success">New Way: <code>srcset</code> + <code>sizes</code></div>
+            <div class="card-body">
+<pre class="mb-0"><code>&lt;img
+  srcset="photo-480.jpg 480w,
+          photo-800.jpg 800w,
+          photo-1200.jpg 1200w,
+          photo-1920.jpg 1920w"
+  sizes="(max-width: 600px) 100vw,
+         (max-width: 1200px) 50vw,
+         800px"
+  src="photo-800.jpg"
+  alt="A landscape photo"
+  class="img-fluid"
+  width="1920" height="1080"
+  loading="lazy"
+&gt;
+
+&lt;!-- Browser picks the right file automatically --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: x Descriptors -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">2. Resolution Switching &mdash; <code>x</code> Descriptors (Fixed Size)</h4>
+      <p class="text-body-secondary">
+        For fixed-size images like logos or avatars, use <code>x</code> descriptors.
+        The browser picks the candidate matching the device pixel ratio. A 2x Retina
+        display loads the 200&times;200 image; a 1x display loads the 100&times;100 image.
+        Each file is only downloaded if needed.
+      </p>
+      <div class="row g-4 mb-3">
+        <div class="col-sm-6">
+          <h6 class="text-body-secondary">Avatar (100&times;100)</h6>
+          <div class="text-center mb-2">
+            <img
+              id="demo-x-img"
+              srcset="https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=100&h=100&fit=crop&q=80 1x,
+                      https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=200&h=200&fit=crop&q=80 2x,
+                      https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=300&h=300&fit=crop&q=80 3x"
+              src="https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=100&h=100&fit=crop&q=80"
+              alt="Portrait of a smiling man"
+              width="100"
+              height="100"
+              class="rounded-circle shadow"
+            >
+          </div>
+          <div class="text-center">
+            <button class="btn btn-outline-primary btn-sm" data-check="demo-x-img">Check What Loaded</button>
+          </div>
+          <div id="demo-x-img-info" class="alert alert-light text-center d-none mt-2"></div>
+        </div>
+        <div class="col-sm-6">
+          <h6 class="text-body-secondary">Card thumbnail (200&times;300, portrait)</h6>
+          <div class="text-center mb-2">
+            <img
+              id="demo-x-vert-img"
+              srcset="https://images.unsplash.com/photo-1614005613214-caca8280da7e?w=200&h=300&fit=crop&q=80 1x,
+                      https://images.unsplash.com/photo-1614005613214-caca8280da7e?w=400&h=600&fit=crop&q=80 2x,
+                      https://images.unsplash.com/photo-1614005613214-caca8280da7e?w=600&h=900&fit=crop&q=80 3x"
+              src="https://images.unsplash.com/photo-1614005613214-caca8280da7e?w=200&h=300&fit=crop&q=80"
+              alt="White and black boat on lake near green mountain"
+              width="200"
+              height="300"
+              class="rounded shadow"
+            >
+          </div>
+          <div class="text-center">
+            <button class="btn btn-outline-primary btn-sm" data-check="demo-x-vert-img">Check What Loaded</button>
+          </div>
+          <div id="demo-x-vert-img-info" class="alert alert-light text-center d-none mt-2"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">Code</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- Square avatar --&gt;
+&lt;img
+  srcset="avatar.jpg    1x,
+          avatar@2x.jpg 2x,
+          avatar@3x.jpg 3x"
+  src="avatar.jpg"
+  alt="User avatar"
+  width="100" height="100"
+&gt;
+
+&lt;!-- Portrait card thumbnail --&gt;
+&lt;img
+  srcset="thumb.jpg    1x,
+          thumb@2x.jpg 2x,
+          thumb@3x.jpg 3x"
+  src="thumb.jpg"
+  alt="Landscape photo"
+  width="200" height="300"
+&gt;
+
+&lt;!-- @2x/@3x naming convention is standard.
+     Use x descriptors ONLY for fixed-size images.
+     Browser selects based on devicePixelRatio.
+     Cannot mix x and w in the same srcset. --&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: w Descriptors + sizes -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">3. Resolution Switching &mdash; <code>w</code> Descriptors + <code>sizes</code> (Fluid)</h4>
+      <p class="text-body-secondary">
+        For fluid images that change size with the viewport, use <code>w</code> descriptors
+        to tell the browser each candidate&rsquo;s intrinsic width, and <code>sizes</code>
+        to declare the image&rsquo;s display width at each breakpoint. The browser combines
+        <code>sizes</code> with <code>devicePixelRatio</code> to pick the optimal file.
+        Resize your browser window and reload to see a different candidate selected.
+      </p>
+      <img
+        id="demo-w-img"
+        srcset="https://images.unsplash.com/photo-1701362611184-41ca0368311c?w=480&h=270&fit=crop&q=80 480w,
+                https://images.unsplash.com/photo-1701362611184-41ca0368311c?w=800&h=450&fit=crop&q=80 800w,
+                https://images.unsplash.com/photo-1701362611184-41ca0368311c?w=1200&h=675&fit=crop&q=80 1200w,
+                https://images.unsplash.com/photo-1701362611184-41ca0368311c?w=1920&h=1080&fit=crop&q=80 1920w,
+                https://images.unsplash.com/photo-1701362611184-41ca0368311c?w=2600&h=1463&fit=crop&q=80 2600w"
+        sizes="(max-width: 575.98px) calc(100vw - 24px),
+               (max-width: 767.98px) 516px,
+               (max-width: 991.98px) 696px,
+               (max-width: 1199.98px) 936px,
+               (max-width: 1399.98px) 1116px,
+               1296px"
+        src="https://images.unsplash.com/photo-1701362611184-41ca0368311c?w=800&h=450&fit=crop&q=80"
+        alt="Aerial view of a small town on the shore of a lake"
+        class="img-fluid rounded shadow-sm mb-3"
+        width="2600"
+        height="1463"
+      >
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <button class="btn btn-outline-primary btn-sm" data-check="demo-w-img">Check What Loaded</button>
+      </div>
+      <div id="demo-w-img-info" class="alert alert-light d-none"></div>
+      <div class="card">
+        <div class="card-header">How the browser selection algorithm works</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;img
+  srcset="photo-480.jpg   480w,
+          photo-800.jpg   800w,
+          photo-1200.jpg 1200w,
+          photo-1920.jpg 1920w,
+          photo-2600.jpg 2600w"
+  sizes="(max-width: 575.98px) calc(100vw - 24px),
+         (max-width: 767.98px) 516px,
+         (max-width: 991.98px) 696px,
+         (max-width: 1199.98px) 936px,
+         (max-width: 1399.98px) 1116px,
+         1296px"
+  src="photo-800.jpg"
+  alt="Landscape"
+  width="2600" height="1463"
+  class="img-fluid"
+&gt;
+
+&lt;!-- sizes must match your actual CSS layout!
+     These values match Bootstrap .container widths
+     minus 24px padding (12px each side).
+
+     Step 1: Evaluate sizes — find first match
+     e.g. viewport = 500px → calc(100vw - 24px) = 476px
+
+     Step 2: Multiply by devicePixelRatio
+     e.g. 476px × 2 = 952px effective
+
+     Step 3: Pick smallest candidate ≥ 952w
+     → photo-1200.jpg (1200w)
+
+     At xxl (≥1400px): 1296px × 2 = 2592px
+     → photo-2600.jpg (2600w)
+
+     If sizes is omitted, defaults to 100vw —
+     always downloads the largest candidate! --&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Art Direction -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">4. Art Direction &mdash; <code>&lt;picture&gt;</code> + <code>&lt;source media&gt;</code></h4>
+      <p class="text-body-secondary">
+        Art direction goes beyond scaling: you serve <em>different crops</em> for different
+        viewports. A wide landscape on desktop, a tighter crop on tablet, a tall
+        portrait on mobile. The <code>&lt;source media&gt;</code> element uses media queries
+        to control which image loads. Unlike <code>srcset</code>, this is <strong>deterministic</strong>
+        &mdash; the browser <em>must</em> obey the media query. Resize the browser to see the switch.
+      </p>
+      <picture>
+        <source
+          media="(min-width: 992px)"
+          srcset="https://images.unsplash.com/photo-1617814086906-d847a8bc6fca?w=1400&h=467&fit=crop&q=80"
+        >
+        <source
+          media="(min-width: 576px)"
+          srcset="https://images.unsplash.com/photo-1617814086906-d847a8bc6fca?w=800&h=500&fit=crop&q=80"
+        >
+        <img
+          id="demo-art-img"
+          src="https://images.unsplash.com/photo-1617814086906-d847a8bc6fca?w=480&h=600&fit=crop&q=80"
+          alt="Black Porsche 911 in a parking lot, cropped differently per viewport"
+          class="img-fluid rounded shadow-sm"
+          width="1400"
+          height="467"
+        >
+      </picture>
+      <div class="d-flex flex-wrap gap-2 mt-3 mb-3">
+        <button class="btn btn-outline-primary btn-sm" data-check="demo-art-img">Check What Loaded</button>
+      </div>
+      <div id="demo-art-img-info" class="alert alert-light d-none"></div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body text-center">
+              <span class="badge text-bg-primary mb-2">Desktop (&ge;992px)</span>
+              <p class="small text-body-secondary mb-0">1400 &times; 467 &mdash; wide landscape</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body text-center">
+              <span class="badge text-bg-warning text-dark mb-2">Tablet (&ge;576px)</span>
+              <p class="small text-body-secondary mb-0">800 &times; 500 &mdash; tighter crop</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body text-center">
+              <span class="badge text-bg-danger mb-2">Mobile (&lt;576px)</span>
+              <p class="small text-body-secondary mb-0">480 &times; 600 &mdash; portrait</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card mt-3">
+        <div class="card-header">Code</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;picture&gt;
+  &lt;source media="(min-width: 992px)"
+          srcset="hero-wide.jpg"&gt;
+  &lt;source media="(min-width: 576px)"
+          srcset="hero-medium.jpg"&gt;
+  &lt;img src="hero-portrait.jpg"
+       alt="Hero image"
+       class="img-fluid"
+       width="1400" height="467"&gt;
+&lt;/picture&gt;
+
+&lt;!-- &lt;picture&gt; is invisible to screen readers.
+     alt text goes on &lt;img&gt; only.
+     The browser picks the first &lt;source&gt;
+     whose media query matches — top to bottom.
+     Unlike srcset, this is deterministic. --&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Format Negotiation -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">5. Format Negotiation &mdash; <code>&lt;picture&gt;</code> + <code>&lt;source type&gt;</code></h4>
+      <p class="text-body-secondary">
+        Serve the most efficient format the browser supports. List sources from
+        most compressed (AVIF) to universal fallback (JPEG). The browser tries each
+        <code>&lt;source&gt;</code> in order and uses the first one whose <code>type</code>
+        it can decode. Browsers that support AVIF skip WebP and JPEG entirely.
+      </p>
+      <div class="alert alert-info" role="alert">
+        <strong>Live demo:</strong> The image below uses Unsplash&rsquo;s CDN with
+        <code>fm=avif</code>, <code>fm=webp</code>, and JPEG fallback.
+        Click &ldquo;Check What Loaded&rdquo; to see which format your browser selected.
+        In production, image CDNs (Cloudflare, Cloudinary, imgix) auto-convert on the fly
+        via the <code>Accept</code> header.
+      </div>
+      <picture>
+        <source type="image/avif" srcset="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1400&h=788&fit=crop&fm=avif&q=80">
+        <source type="image/webp" srcset="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1400&h=788&fit=crop&fm=webp&q=80">
+        <img
+          id="demo-format-img"
+          src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1400&h=788&fit=crop&q=80"
+          alt="Golden Gate Bridge during daytime"
+          class="img-fluid rounded shadow-sm"
+          width="1400"
+          height="788"
+        >
+      </picture>
+      <div class="d-flex flex-wrap gap-2 mt-3 mb-3">
+        <button class="btn btn-outline-primary btn-sm" data-check="demo-format-img">Check What Loaded</button>
+      </div>
+      <div id="demo-format-img-info" class="alert alert-light d-none"></div>
+      <div class="card mt-2">
+        <div class="card-header">Production code</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;picture&gt;
+  &lt;!-- Best compression: AVIF (~50% smaller than JPEG) --&gt;
+  &lt;source type="image/avif"
+          srcset="photo-480.avif 480w,
+                  photo-800.avif 800w,
+                  photo-1200.avif 1200w"
+          sizes="(max-width: 600px) 100vw, 800px"&gt;
+
+  &lt;!-- Good compression: WebP (~30% smaller than JPEG) --&gt;
+  &lt;source type="image/webp"
+          srcset="photo-480.webp 480w,
+                  photo-800.webp 800w,
+                  photo-1200.webp 1200w"
+          sizes="(max-width: 600px) 100vw, 800px"&gt;
+
+  &lt;!-- Universal fallback: JPEG --&gt;
+  &lt;img src="photo-800.jpg"
+       srcset="photo-480.jpg 480w,
+              photo-800.jpg 800w,
+              photo-1200.jpg 1200w"
+       sizes="(max-width: 600px) 100vw, 800px"
+       alt="Photo"
+       class="img-fluid"
+       width="1200" height="675"
+       loading="lazy"
+       decoding="async"&gt;
+&lt;/picture&gt;
+
+&lt;!-- Browser evaluates &lt;source&gt; tags top to bottom.
+     First supported type wins. --&gt;</code></pre>
+        </div>
+      </div>
+      <h5 class="mt-4 mb-3">Format Comparison</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Format</th>
+              <th>Savings vs JPEG</th>
+              <th>Quality</th>
+              <th>Browser Support</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>AVIF</strong></td>
+              <td>~50% smaller</td>
+              <td>Excellent (HDR, wide gamut, alpha)</td>
+              <td>Chrome 85+, Firefox 113+, Safari 16.4+, Edge 121+</td>
+            </tr>
+            <tr class="table-success">
+              <td><strong>WebP</strong> <span class="badge text-bg-success">Recommended</span></td>
+              <td>~30% smaller</td>
+              <td>Great quality, fast decode, small size</td>
+              <td>Chrome 32+, Firefox 65+, Safari 16+, Edge 18+</td>
+            </tr>
+            <tr>
+              <td>JPEG XL</td>
+              <td>~60% smaller</td>
+              <td>Lossless from JPEG, progressive</td>
+              <td>Safari 17+ only (partial) &mdash; <strong>not baseline</strong></td>
+            </tr>
+            <tr>
+              <td>JPEG</td>
+              <td>&mdash;</td>
+              <td>Good (universal, well-optimized)</td>
+              <td>Universal fallback</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-body-secondary small">
+        <strong>Practical advice:</strong> Prefer <strong>WebP</strong> as your default format &mdash;
+        it offers excellent quality at significantly smaller file sizes than JPEG, decodes fast,
+        and has universal browser support. Use AVIF as the top-tier option in the
+        <code>&lt;picture&gt;</code> fallback chain for browsers that support it.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 6: Image Optimization Tools -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">6. Optimize First, Then Serve Responsively</h4>
+      <p class="text-body-secondary">
+        <code>srcset</code> and <code>&lt;picture&gt;</code> deliver the right <em>size</em> and <em>format</em>,
+        but they cannot fix an unoptimized source file. Serving a 5 MB uncompressed JPEG at multiple
+        widths just gives you five large files instead of one. <strong>Always compress your images
+        before generating responsive variants.</strong>
+      </p>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <h5 class="card-title">TinyPNG</h5>
+              <p class="card-text text-body-secondary small">
+                Lossy compression for PNG and JPEG. Reduces file size dramatically
+                with minimal visual loss. Batch processing via web or API.
+              </p>
+              <a href="https://tinypng.com/" target="_blank" class="btn btn-outline-primary btn-sm">tinypng.com</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <h5 class="card-title">Kraken.io</h5>
+              <p class="card-text text-body-secondary small">
+                Advanced image optimization with lossy and lossless modes.
+                Supports bulk uploads and integrates with cloud storage.
+              </p>
+              <a href="https://kraken.io/" target="_blank" class="btn btn-outline-primary btn-sm">kraken.io</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <h5 class="card-title">Squoosh</h5>
+              <p class="card-text text-body-secondary small">
+                Google&rsquo;s open-source tool. Runs entirely in-browser.
+                Converts between AVIF, WebP, JPEG XL, and JPEG with live preview.
+              </p>
+              <a href="https://squoosh.app/" target="_blank" class="btn btn-outline-primary btn-sm">squoosh.app</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-info mt-3" role="alert">
+        <strong>Production at scale:</strong> Image CDNs like
+        <strong>Cloudflare Images</strong>, <strong>Cloudinary</strong>, and <strong>imgix</strong>
+        auto-optimize, resize, and convert images on the fly at the edge.
+        They detect the browser&rsquo;s supported formats via the <code>Accept</code> header
+        and serve the most compressed version automatically &mdash; often eliminating
+        the need for manual <code>&lt;picture&gt;</code> format switching entirely.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Performance Attributes -->
+  <div class="row mb-5">
+    <div class="col">
+      <h4 class="mb-3">7. Performance Attributes</h4>
+      <p class="text-body-secondary">
+        Modern HTML attributes give the browser hints about priority, timing, and layout.
+        These work on any <code>&lt;img&gt;</code> &mdash; no JavaScript needed.
+      </p>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header"><code>loading="lazy"</code></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">
+                Defer loading offscreen images until the user scrolls near them.
+                Removes images from the critical rendering path.
+              </p>
+              <p class="small text-body-secondary mb-2">Safari 16.4+, Chrome 77+, Firefox 121+</p>
+<pre class="mb-0"><code>&lt;img src="below-fold.jpg"
+     loading="lazy"
+     alt="..." &gt;</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header"><code>fetchpriority="high"</code></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">
+                Tell the browser this image is critical (e.g., LCP hero).
+                Fetched before other images in the queue.
+              </p>
+              <p class="small text-body-secondary mb-2">Chrome 101+, Firefox 132+, Safari 17.2+</p>
+<pre class="mb-0"><code>&lt;img src="hero.jpg"
+     fetchpriority="high"
+     alt="..." &gt;</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header"><code>decoding="async"</code></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">
+                Allow the browser to decode the image off the main thread,
+                avoiding blocking other content from rendering.
+              </p>
+              <p class="small text-body-secondary mb-2">Chrome 65+, Firefox 63+, Safari 11.1+</p>
+<pre class="mb-0"><code>&lt;img src="photo.jpg"
+     decoding="async"
+     alt="..." &gt;</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header"><code>width</code> + <code>height</code> (CLS Prevention)</div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">
+                Always set <code>width</code> and <code>height</code>. The browser calculates
+                the aspect ratio before download, reserving space to prevent layout shift.
+                Only 32% of sites do this.
+              </p>
+<pre class="mb-0"><code>&lt;img src="photo.jpg"
+     width="1920" height="1080"
+     class="img-fluid"
+     alt="..." &gt;
+
+&lt;!-- Browser reserves 16:9 space
+     before download. No layout jump. --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-danger mt-3" role="alert">
+        <strong>Anti-pattern:</strong> Never combine <code>loading="lazy"</code> with
+        <code>fetchpriority="high"</code> on the same image.
+        <code>lazy</code> suppresses the fetch until scroll visibility;
+        <code>fetchpriority="high"</code> tries to fetch immediately.
+        They conflict &mdash; the lazy constraint wins and delays the priority hint.
+      </div>
+      <div class="card mt-3">
+        <div class="card-header">Best Practice: All Attributes Combined</div>
+        <div class="card-body">
+<pre class="mb-0"><code>&lt;!-- Hero image (above the fold) --&gt;
+&lt;img src="hero.jpg"
+     srcset="hero-480.jpg 480w, hero-800.jpg 800w, hero-1200.jpg 1200w"
+     sizes="100vw"
+     width="1200" height="675"
+     fetchpriority="high"
+     decoding="async"
+     alt="Hero image"
+     class="img-fluid"&gt;
+
+&lt;!-- Below-the-fold image --&gt;
+&lt;img src="card.jpg"
+     srcset="card-480.jpg 480w, card-800.jpg 800w"
+     sizes="(max-width: 768px) 100vw, 50vw"
+     width="800" height="600"
+     loading="lazy"
+     decoding="async"
+     alt="Card image"
+     class="img-fluid"&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 8: Full Code Comparison -->
+  <div class="row mb-4">
+    <div class="col">
+      <h4 class="mb-3">8. Code Comparison &mdash; Old Way vs New Way</h4>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card border-danger">
+            <div class="card-header text-bg-danger">Old: <code>&lt;img src&gt;</code> + <code>.img-fluid</code></div>
+            <div class="card-body">
+<pre class="mb-0"><code>&lt;img
+  src="photo-1920.jpg"
+  class="img-fluid"
+  alt="Photo"
+&gt;
+
+&lt;!-- Result:
+  ✗ Mobile: downloads 1920px file
+  ✗ 1x screen gets correct size,
+    but 2x/3x are blurry
+  ✗ No format negotiation
+  ✗ No lazy loading
+  ✗ No layout shift prevention
+  ✗ .img-fluid is CSS scaling only —
+    no bandwidth saved --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header text-bg-success">New: Native Responsive Images</div>
+            <div class="card-body">
+<pre class="mb-0"><code>&lt;picture&gt;
+  &lt;source type="image/avif"
+    srcset="photo-480.avif 480w,
+            photo-800.avif 800w,
+            photo-1200.avif 1200w"
+    sizes="(max-width: 600px) 100vw,
+           (max-width: 1200px) 50vw,
+           800px"&gt;
+  &lt;source type="image/webp"
+    srcset="photo-480.webp 480w,
+            photo-800.webp 800w,
+            photo-1200.webp 1200w"
+    sizes="(max-width: 600px) 100vw,
+           (max-width: 1200px) 50vw,
+           800px"&gt;
+  &lt;img
+    srcset="photo-480.jpg 480w,
+            photo-800.jpg 800w,
+            photo-1200.jpg 1200w"
+    sizes="(max-width: 600px) 100vw,
+           (max-width: 1200px) 50vw,
+           800px"
+    src="photo-800.jpg"
+    alt="Photo"
+    class="img-fluid"
+    width="1200" height="675"
+    loading="lazy"
+    decoding="async"&gt;
+&lt;/picture&gt;
+
+&lt;!-- Result:
+  ✓ Right size for every viewport
+  ✓ Best format (AVIF &gt; WebP &gt; JPEG)
+  ✓ Lazy loaded below the fold
+  ✓ No layout shift (width/height)
+  ✓ Zero JavaScript --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 CSS from jsDelivr CDN.
+    Responsive images use zero JavaScript &mdash; <code>srcset</code>,
+    <code>sizes</code>, and <code>&lt;picture&gt;</code> are native HTML
+    evaluated by the browser engine.</small>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Display device pixel ratio
+  var dprEl = document.getElementById('dpr-value');
+  if (dprEl) {
+    dprEl.textContent = window.devicePixelRatio + 'x';
+  }
+
+  // "Check What Loaded" buttons
+  document.querySelectorAll('[data-check]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var imgId = btn.getAttribute('data-check');
+      var img = document.getElementById(imgId);
+      var infoEl = document.getElementById(imgId + '-info');
+      if (!img || !infoEl) return;
+
+      infoEl.classList.remove('d-none');
+      infoEl.innerHTML =
+        '<strong>currentSrc:</strong> <span class="img-info-loaded">' +
+        (img.currentSrc || img.src) + '</span><br>' +
+        '<strong>naturalWidth:</strong> ' + img.naturalWidth + 'px, ' +
+        '<strong>naturalHeight:</strong> ' + img.naturalHeight + 'px, ' +
+        '<strong>devicePixelRatio:</strong> ' + window.devicePixelRatio;
+    });
+  });
+})();
+</script>
+</body>
+</html>
