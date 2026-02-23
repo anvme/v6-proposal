@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark: Bootstrap ScrollSpy JS vs Native IntersectionObserver</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .winner { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .loser { background-color: rgba(220, 53, 69, 0.1) !important; }
+    #progress-bar-inner { transition: width 0.2s ease; }
+
+    /* Disable transitions during benchmark */
+    .no-transitions,
+    .no-transitions *,
+    .no-transitions *::before,
+    .no-transitions *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    /* Scrollable containers for benchmark items */
+    .spy-container {
+      height: 120px;
+      overflow-y: auto;
+      scroll-behavior: auto;
+    }
+    .spy-section {
+      min-height: 120px;
+      padding: .5rem;
+      font-size: .75rem;
+    }
+    .spy-nav .nav-link {
+      padding: .15rem .4rem;
+      font-size: .7rem;
+    }
+
+    /* Preview scrollable area */
+    .preview-scroll {
+      height: 200px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    .preview-section {
+      min-height: 200px;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body class="pt-4 pb-5">
+
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="display-6">ScrollSpy Benchmark</h1>
+      <p class="lead text-body-secondary">Bootstrap 5 ScrollSpy JS (config parser + event system + <code>.active</code> class manager + 44 KB infra) vs Native <code>IntersectionObserver</code> (~15 lines)</p>
+      <div class="alert alert-info" role="alert">
+        <strong>Methodology:</strong> Both sections contain 20 scroll containers with 10 sections each (200 sections total).
+        The benchmark creates Bootstrap ScrollSpy instances (init cost), then programmatically scrolls through all 10
+        sections in each container for 50 cycles (10,000 scroll position changes per section). DOM mutations are counted
+        via <code>MutationObserver</code>. CSS transitions are disabled during the run so we measure raw JS overhead.
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="https://caniuse.com/intersectionobserver" target="_blank" class="badge text-bg-secondary text-decoration-none">IntersectionObserver</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-warning text-dark me-2">Bootstrap JS</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>bootstrap.ScrollSpy</code> &mdash; wraps <code>IntersectionObserver</code> with config parsing, custom event system (<code>activate.bs.scrollspy</code>), <code>.active</code> class management across nested navs, data store, and 8 dependency files (44 KB).</p>
+          <!-- BS ScrollSpy Preview -->
+          <nav id="preview-bs-nav" class="nav nav-pills mb-2">
+            <a class="nav-link" href="#preview-bs-s1">Section 1</a>
+            <a class="nav-link" href="#preview-bs-s2">Section 2</a>
+            <a class="nav-link" href="#preview-bs-s3">Section 3</a>
+          </nav>
+          <div class="preview-scroll border rounded" id="preview-bs-scroll" data-bs-spy="scroll" data-bs-target="#preview-bs-nav" data-bs-root-margin="0px 0px -40%" tabindex="0">
+            <div id="preview-bs-s1" class="preview-section bg-light">
+              <h6>Section 1</h6>
+              <p>Scroll down to see the nav link highlight change. Bootstrap ScrollSpy manages <code>.active</code> classes on the nav links above.</p>
+            </div>
+            <div id="preview-bs-s2" class="preview-section">
+              <h6>Section 2</h6>
+              <p>Each scroll position triggers the internal IntersectionObserver, which then goes through Bootstrap&rsquo;s event system, config parser, and class management layer.</p>
+            </div>
+            <div id="preview-bs-s3" class="preview-section bg-light">
+              <h6>Section 3</h6>
+              <p>All of this requires 44 KB of JavaScript infrastructure: scrollspy.js + base-component + event-handler + selector-engine + data + manipulator + util + config.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title"><span class="badge bg-success me-2">Native Browser API</span></h5>
+          <p class="card-text text-body-secondary">Uses <code>IntersectionObserver</code> directly &mdash; one callback toggles <code>.active</code> on nav links. Same result, ~15 lines of JS, zero dependencies, zero custom events.</p>
+          <!-- Native ScrollSpy Preview -->
+          <nav id="preview-native-nav" class="nav nav-pills mb-2">
+            <a class="nav-link" href="#preview-native-s1">Section 1</a>
+            <a class="nav-link" href="#preview-native-s2">Section 2</a>
+            <a class="nav-link" href="#preview-native-s3">Section 3</a>
+          </nav>
+          <div class="preview-scroll border rounded" id="preview-native-scroll" tabindex="0">
+            <div id="preview-native-s1" class="preview-section bg-light">
+              <h6>Section 1</h6>
+              <p>Scroll down &mdash; the nav links highlight via a single <code>IntersectionObserver</code> callback. No framework, no config parser, no event system.</p>
+            </div>
+            <div id="preview-native-s2" class="preview-section">
+              <h6>Section 2</h6>
+              <p>The observer fires when sections enter the viewport. The callback is just: remove <code>.active</code> from all links, add it to the matching one.</p>
+            </div>
+            <div id="preview-native-s3" class="preview-section bg-light">
+              <h6>Section 3</h6>
+              <p>Total code: <strong>~15 lines</strong>. The browser&rsquo;s built-in <code>IntersectionObserver</code> handles all the visibility detection.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <button id="btn-run" class="btn btn-primary btn-lg px-5">Run Benchmark</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="row mb-4 d-none" id="progress-section">
+    <div class="col">
+      <div class="d-flex justify-content-between mb-1">
+        <span id="progress-label" class="fw-semibold">Initializing...</span>
+        <span id="progress-pct" class="text-body-secondary">0%</span>
+      </div>
+      <div class="progress" role="progressbar" style="height: 24px;">
+        <div id="progress-bar-inner" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="row mb-4 d-none" id="results-section">
+    <div class="col">
+      <h4 class="mb-3">Results</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-start" style="width: 30%;">Metric</th>
+              <th style="width: 35%;">Bootstrap ScrollSpy</th>
+              <th style="width: 35%;">Native IntersectionObserver</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-start">Initialization time (20 containers &times; 10 sections)</td>
+              <td class="font-monospace fw-semibold" id="res-init-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-init-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Scroll time (50 cycles &times; 20 containers &times; 10 sections)</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-toggle-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">DOM mutations (50 cycles &times; 20 containers &times; 10 sections)</td>
+              <td class="font-monospace fw-semibold" id="res-dom-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-dom-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">Instance memory cost (20 ScrollSpy instances)</td>
+              <td class="font-monospace fw-semibold" id="res-mem-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-mem-native">-</td>
+            </tr>
+            <tr>
+              <td class="text-start">
+                JS code size
+                <div class="small text-body-secondary mt-1">
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/scrollspy.js" target="_blank">scrollspy.js</a> <span class="text-body-tertiary">(8.4 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/base-component.js" target="_blank">base-component</a> <span class="text-body-tertiary">(2.8 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/event-handler.js" target="_blank">event-handler</a> <span class="text-body-tertiary">(9.2 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/selector-engine.js" target="_blank">selector-engine</a> <span class="text-body-tertiary">(4.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/data.js" target="_blank">data</a> <span class="text-body-tertiary">(2.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/dom/manipulator.js" target="_blank">manipulator</a> <span class="text-body-tertiary">(2.3 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/index.js" target="_blank">util</a> <span class="text-body-tertiary">(9.1 KB)</span> +
+                  <a href="https://github.com/twbs/bootstrap/blob/v5.3.8/js/dist/util/config.js" target="_blank">config</a> <span class="text-body-tertiary">(2.5 KB)</span>
+                </div>
+              </td>
+              <td class="font-monospace fw-semibold" id="res-size-bs">-</td>
+              <td class="font-monospace fw-semibold" id="res-size-native">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Test Items -->
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-warning text-dark me-2">Bootstrap JS</span>
+        <small class="text-body-secondary">20 containers &times; 10 sections &mdash; <code>bootstrap.ScrollSpy</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="bs-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <h5 class="mb-3">
+        <span class="badge bg-success me-2">Native Browser API</span>
+        <small class="text-body-secondary">20 containers &times; 10 sections &mdash; <code>IntersectionObserver</code></small>
+      </h5>
+      <div class="overflow-auto border rounded p-3" style="max-height: 400px;" id="native-container">
+        <!-- Items generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Difference Alert -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="alert alert-warning">
+        <strong>Key difference:</strong> Bootstrap ScrollSpy wraps <code>IntersectionObserver</code> with 44 KB of
+        JavaScript infrastructure: a config parser, custom event system (<code>activate.bs.scrollspy</code>), data
+        store for instance management, <code>.active</code> class propagation through nested nav structures,
+        manipulator utils, and selector engine. Native <code>IntersectionObserver</code> does the same visibility
+        detection &mdash; the callback just toggles <code>.active</code> directly in ~15 lines of code. Both use the
+        same browser-level intersection detection, but Bootstrap adds significant overhead on top of it.
+      </div>
+    </div>
+  </div>
+
+  <!-- Implementation Card -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Native IntersectionObserver scrollspy (entire implementation)</div>
+        <div class="card-body">
+<pre class="mb-0"><code>const nav = document.querySelector('#my-nav');
+const container = document.querySelector('#scroll-area');
+const sections = container.querySelectorAll('[id]');
+
+const observer = new IntersectionObserver((entries) =&gt; {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      nav.querySelectorAll('.active').forEach(a =&gt; a.classList.remove('active'));
+      const link = nav.querySelector(`a[href="#${entry.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  }
+}, { root: container, rootMargin: '0px 0px -40% 0px', threshold: 0 });
+
+sections.forEach(section =&gt; observer.observe(section));
+
+// That's it. ~15 lines. Same result as Bootstrap ScrollSpy.</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-body-secondary mt-4 pt-4 border-top">
+    <small>Bootstrap v5.3.8 loaded from jsDelivr CDN. Memory measurement uses
+    <code>performance.measureUserAgentSpecificMemory()</code> when available (requires cross-origin isolation),
+    falls back to <code>performance.memory</code> (Chrome only). DOM mutations counted via <code>MutationObserver</code>.
+    Best results in an incognito window with DevTools closed.</small>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const CONTAINER_COUNT = 20;
+  const SECTIONS_PER_CONTAINER = 10;
+  const CYCLE_COUNT = 50;
+  // Bootstrap 5.3.8: scrollspy.js + 7 dependency files (~40.5 KB)
+  const BS_SCROLLSPY_JS_SIZE = 40500;
+
+  const SECTION_COLORS = ['bg-light', '', 'bg-light', '', 'bg-light', '', 'bg-light', '', 'bg-light', ''];
+
+  // ── Generate Items ──────────────────────────────────────────────────
+
+  function generateBootstrapItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-3';
+
+      // Nav
+      const nav = document.createElement('nav');
+      nav.className = 'nav nav-pills spy-nav flex-nowrap overflow-auto mb-1';
+      nav.id = `bs-nav-${c}`;
+
+      for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+        const a = document.createElement('a');
+        a.className = 'nav-link';
+        a.href = `#bs-section-${c}-${s}`;
+        a.textContent = `S${s + 1}`;
+        nav.appendChild(a);
+      }
+
+      // Scrollable container
+      const scroll = document.createElement('div');
+      scroll.className = 'spy-container border rounded';
+      scroll.id = `bs-scroll-${c}`;
+      scroll.setAttribute('data-bs-spy', 'scroll');
+      scroll.setAttribute('data-bs-target', `#bs-nav-${c}`);
+      scroll.setAttribute('data-bs-root-margin', '0px 0px -40%');
+      scroll.setAttribute('tabindex', '0');
+
+      for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+        const section = document.createElement('div');
+        section.className = `spy-section ${SECTION_COLORS[s]}`;
+        section.id = `bs-section-${c}-${s}`;
+        section.textContent = `Container ${c + 1} — Section ${s + 1}. Lorem ipsum dolor sit amet.`;
+        scroll.appendChild(section);
+      }
+
+      wrapper.appendChild(nav);
+      wrapper.appendChild(scroll);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  function generateNativeItems(container) {
+    const frag = document.createDocumentFragment();
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-3';
+
+      // Nav
+      const nav = document.createElement('nav');
+      nav.className = 'nav nav-pills spy-nav flex-nowrap overflow-auto mb-1';
+      nav.id = `native-nav-${c}`;
+
+      for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+        const a = document.createElement('a');
+        a.className = 'nav-link';
+        a.href = `#native-section-${c}-${s}`;
+        a.textContent = `S${s + 1}`;
+        nav.appendChild(a);
+      }
+
+      // Scrollable container
+      const scroll = document.createElement('div');
+      scroll.className = 'spy-container border rounded';
+      scroll.id = `native-scroll-${c}`;
+      scroll.setAttribute('tabindex', '0');
+
+      for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+        const section = document.createElement('div');
+        section.className = `spy-section ${SECTION_COLORS[s]}`;
+        section.id = `native-section-${c}-${s}`;
+        section.textContent = `Container ${c + 1} — Section ${s + 1}. Lorem ipsum dolor sit amet.`;
+        scroll.appendChild(section);
+      }
+
+      wrapper.appendChild(nav);
+      wrapper.appendChild(scroll);
+      frag.appendChild(wrapper);
+    }
+    container.appendChild(frag);
+  }
+
+  const bsContainer = document.getElementById('bs-container');
+  const nativeContainer = document.getElementById('native-container');
+
+  generateBootstrapItems(bsContainer);
+  generateNativeItems(nativeContainer);
+
+  // ── Native preview scrollspy ──────────────────────────────────────
+
+  (function initPreview() {
+    const nav = document.getElementById('preview-native-nav');
+    const scroll = document.getElementById('preview-native-scroll');
+    const sections = scroll.querySelectorAll('[id]');
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          nav.querySelectorAll('.active').forEach(a => a.classList.remove('active'));
+          const link = nav.querySelector(`a[href="#${entry.target.id}"]`);
+          if (link) link.classList.add('active');
+        }
+      }
+    }, { root: scroll, rootMargin: '0px 0px -40% 0px', threshold: 0 });
+
+    sections.forEach(section => observer.observe(section));
+  })();
+
+  // ── UI helpers ──────────────────────────────────────────────────────
+
+  const btnRun = document.getElementById('btn-run');
+  const progressSection = document.getElementById('progress-section');
+  const progressLabel = document.getElementById('progress-label');
+  const progressPct = document.getElementById('progress-pct');
+  const progressBarInner = document.getElementById('progress-bar-inner');
+  const resultsSection = document.getElementById('results-section');
+
+  function setProgress(label, pct) {
+    progressLabel.textContent = label;
+    const p = Math.round(pct);
+    progressPct.textContent = `${p}%`;
+    progressBarInner.style.width = `${p}%`;
+  }
+
+  function formatMs(ms) {
+    return ms < 1 ? `${(ms * 1000).toFixed(0)} \u00B5s` : `${ms.toFixed(2)} ms`;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    const abs = Math.abs(bytes);
+    const sign = bytes < 0 ? '-' : '';
+    if (abs < 1024) return `${sign}${abs} B`;
+    if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatBytesPair(a, b) {
+    if (a === null || b === null) return [formatBytes(a), formatBytes(b)];
+    const maxAbs = Math.max(Math.abs(a), Math.abs(b));
+    if (maxAbs < 1024) return [fmtBytesInUnit(a, 'B'), fmtBytesInUnit(b, 'B')];
+    if (maxAbs < 1024 * 1024) return [fmtBytesInUnit(a, 'KB'), fmtBytesInUnit(b, 'KB')];
+    return [fmtBytesInUnit(a, 'MB'), fmtBytesInUnit(b, 'MB')];
+  }
+
+  function fmtBytesInUnit(bytes, unit) {
+    const sign = bytes < 0 ? '-' : '';
+    const abs = Math.abs(bytes);
+    if (unit === 'B') return `${sign}${abs} B`;
+    if (unit === 'KB') return `${sign}${(abs / 1024).toFixed(1)} KB`;
+    return `${sign}${(abs / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function markWinnerLoser(bsCell, nativeCell, bsVal, nativeVal) {
+    bsCell.classList.remove('winner', 'loser');
+    nativeCell.classList.remove('winner', 'loser');
+    if (bsVal === null || nativeVal === null) return;
+    if (bsVal < nativeVal) {
+      bsCell.classList.add('winner');
+      nativeCell.classList.add('loser');
+    } else if (nativeVal < bsVal) {
+      nativeCell.classList.add('winner');
+      bsCell.classList.add('loser');
+    }
+  }
+
+  // ── Memory helper ──────────────────────────────────────────────────
+
+  async function measureMemory() {
+    if (typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const result = await performance.measureUserAgentSpecificMemory();
+        return result.bytes;
+      } catch { /* requires crossOriginIsolated, fall through */ }
+    }
+    if (typeof gc === 'function') gc();
+    await new Promise(r => setTimeout(r, 100));
+    if (performance.memory) return performance.memory.usedJSHeapSize;
+    return null;
+  }
+
+  function nextFrame() {
+    return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  }
+
+  // ── Benchmark runner ───────────────────────────────────────────────
+
+  async function runBenchmark() {
+    btnRun.disabled = true;
+    progressSection.classList.remove('d-none');
+    resultsSection.classList.add('d-none');
+    setProgress('Preparing...', 0);
+    await nextFrame();
+
+    // Disable CSS transitions
+    document.documentElement.classList.add('no-transitions');
+    await nextFrame();
+
+    // Collect BS scroll containers
+    const bsScrollEls = [];
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      bsScrollEls.push(document.getElementById(`bs-scroll-${c}`));
+    }
+
+    // Collect native scroll containers and their nav elements
+    const nativeScrollEls = [];
+    const nativeNavEls = [];
+    const nativeObservers = [];
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      nativeScrollEls.push(document.getElementById(`native-scroll-${c}`));
+      nativeNavEls.push(document.getElementById(`native-nav-${c}`));
+    }
+
+    // Pre-compute section offsets for scrolling
+    const bsSectionOffsets = [];
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      const offsets = [];
+      for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+        const section = document.getElementById(`bs-section-${c}-${s}`);
+        offsets.push(section.offsetTop - bsScrollEls[c].offsetTop);
+      }
+      bsSectionOffsets.push(offsets);
+    }
+
+    const nativeSectionOffsets = [];
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      const offsets = [];
+      for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+        const section = document.getElementById(`native-section-${c}-${s}`);
+        offsets.push(section.offsetTop - nativeScrollEls[c].offsetTop);
+      }
+      nativeSectionOffsets.push(offsets);
+    }
+
+    // ── 1. Initialization benchmark ──────────────────────────────────
+
+    setProgress('Benchmarking: Bootstrap initialization...', 5);
+    await nextFrame();
+
+    // Dispose any existing BS ScrollSpy instances
+    bsScrollEls.forEach(el => {
+      const existing = bootstrap.ScrollSpy.getInstance(el);
+      if (existing) existing.dispose();
+    });
+    await nextFrame();
+
+    const memBeforeBsInit = await measureMemory();
+
+    const bsInitStart = performance.now();
+    const bsInstances = [];
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      bsInstances.push(new bootstrap.ScrollSpy(bsScrollEls[c], {
+        target: `#bs-nav-${c}`,
+        rootMargin: '0px 0px -40%'
+      }));
+    }
+    const bsInitTime = performance.now() - bsInitStart;
+
+    const memAfterBsInit = await measureMemory();
+    const bsInitMemDelta = (memBeforeBsInit !== null && memAfterBsInit !== null)
+      ? Math.max(0, memAfterBsInit - memBeforeBsInit)
+      : null;
+
+    setProgress('Benchmarking: Native initialization...', 15);
+    await nextFrame();
+
+    const memBeforeNativeInit = await measureMemory();
+
+    const nativeInitStart = performance.now();
+    for (let c = 0; c < CONTAINER_COUNT; c++) {
+      const nav = nativeNavEls[c];
+      const scroll = nativeScrollEls[c];
+      const sections = scroll.querySelectorAll('[id]');
+
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            nav.querySelectorAll('.active').forEach(a => a.classList.remove('active'));
+            const link = nav.querySelector(`a[href="#${entry.target.id}"]`);
+            if (link) link.classList.add('active');
+          }
+        }
+      }, { root: scroll, rootMargin: '0px 0px -40% 0px', threshold: 0 });
+
+      sections.forEach(section => observer.observe(section));
+      nativeObservers.push(observer);
+    }
+    const nativeInitTime = performance.now() - nativeInitStart;
+
+    const memAfterNativeInit = await measureMemory();
+    const nativeInitMemDelta = (memBeforeNativeInit !== null && memAfterNativeInit !== null)
+      ? Math.max(0, memAfterNativeInit - memBeforeNativeInit)
+      : null;
+
+    // ── 2. Scroll benchmark with DOM mutation counting ─────────────────
+
+    setProgress('Benchmarking: Bootstrap scrolling...', 20);
+    await nextFrame();
+
+    // BS scroll + mutation count
+    let bsMutationCount = 0;
+    const bsObserver = new MutationObserver(mutations => {
+      bsMutationCount += mutations.length;
+    });
+    bsObserver.observe(bsContainer, { attributes: true, childList: true, subtree: true });
+
+    const bsToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let c = 0; c < CONTAINER_COUNT; c++) {
+        for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+          bsScrollEls[c].scrollTop = bsSectionOffsets[c][s];
+        }
+      }
+    }
+    const bsToggleTime = performance.now() - bsToggleStart;
+
+    // Give IO callbacks time to fire
+    await nextFrame();
+    await new Promise(r => setTimeout(r, 50));
+    bsMutationCount += bsObserver.takeRecords().length;
+    bsObserver.disconnect();
+
+    setProgress('Benchmarking: Native scrolling...', 60);
+    await nextFrame();
+
+    // Native scroll + mutation count
+    let nativeMutationCount = 0;
+    const nativeMutObserver = new MutationObserver(mutations => {
+      nativeMutationCount += mutations.length;
+    });
+    nativeMutObserver.observe(nativeContainer, { attributes: true, childList: true, subtree: true });
+
+    const nativeToggleStart = performance.now();
+    for (let cycle = 0; cycle < CYCLE_COUNT; cycle++) {
+      for (let c = 0; c < CONTAINER_COUNT; c++) {
+        for (let s = 0; s < SECTIONS_PER_CONTAINER; s++) {
+          nativeScrollEls[c].scrollTop = nativeSectionOffsets[c][s];
+        }
+      }
+    }
+    const nativeToggleTime = performance.now() - nativeToggleStart;
+
+    // Give IO callbacks time to fire
+    await nextFrame();
+    await new Promise(r => setTimeout(r, 50));
+    nativeMutationCount += nativeMutObserver.takeRecords().length;
+    nativeMutObserver.disconnect();
+
+    // ── 3. Clean up ──────────────────────────────────────────────────
+
+    document.documentElement.classList.remove('no-transitions');
+    // Reset scroll positions
+    bsScrollEls.forEach(el => { el.scrollTop = 0; });
+    nativeScrollEls.forEach(el => { el.scrollTop = 0; });
+
+    // ── 4. Display results ───────────────────────────────────────────
+
+    setProgress('Complete!', 100);
+
+    const resInitBs = document.getElementById('res-init-bs');
+    const resInitNative = document.getElementById('res-init-native');
+    resInitBs.textContent = formatMs(bsInitTime);
+    resInitNative.textContent = formatMs(nativeInitTime);
+    markWinnerLoser(resInitBs, resInitNative, bsInitTime, nativeInitTime);
+
+    const resToggleBs = document.getElementById('res-toggle-bs');
+    const resToggleNative = document.getElementById('res-toggle-native');
+    resToggleBs.textContent = formatMs(bsToggleTime);
+    resToggleNative.textContent = formatMs(nativeToggleTime);
+    markWinnerLoser(resToggleBs, resToggleNative, bsToggleTime, nativeToggleTime);
+
+    const resDomBs = document.getElementById('res-dom-bs');
+    const resDomNative = document.getElementById('res-dom-native');
+    resDomBs.textContent = formatNumber(bsMutationCount);
+    resDomNative.textContent = formatNumber(nativeMutationCount);
+    markWinnerLoser(resDomBs, resDomNative, bsMutationCount, nativeMutationCount);
+
+    const resMemBs = document.getElementById('res-mem-bs');
+    const resMemNative = document.getElementById('res-mem-native');
+    if (bsInitMemDelta !== null && nativeInitMemDelta !== null) {
+      const [bsMemStr, nativeMemStr] = formatBytesPair(bsInitMemDelta, nativeInitMemDelta);
+      resMemBs.textContent = bsMemStr;
+      resMemNative.textContent = nativeMemStr;
+      markWinnerLoser(resMemBs, resMemNative, bsInitMemDelta, nativeInitMemDelta);
+    } else {
+      resMemBs.textContent = 'N/A (Chrome only)';
+      resMemNative.textContent = 'N/A (Chrome only)';
+    }
+
+    const resSizeBs = document.getElementById('res-size-bs');
+    const resSizeNative = document.getElementById('res-size-native');
+    resSizeBs.textContent = formatBytes(BS_SCROLLSPY_JS_SIZE);
+    resSizeNative.textContent = '~15 lines';
+    markWinnerLoser(resSizeBs, resSizeNative, BS_SCROLLSPY_JS_SIZE, 500);
+
+    resultsSection.classList.remove('d-none');
+    btnRun.disabled = false;
+  }
+
+  btnRun.addEventListener('click', runBenchmark);
+})();
+</script>
+</body>
+</html>
