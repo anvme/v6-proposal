@@ -380,6 +380,53 @@
     </div>
 
     <hr class="my-5">
+
+    <h2 class="mb-2">
+      Reports
+    </h2>
+    <p class="lead text-body-secondary mb-4">
+      Static analysis reports for the Bootstrap codebase.
+    </p>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">ast-grep Report</h5>
+            <p class="card-text">Structural code pattern analysis using ast-grep &mdash; finds code patterns across the Bootstrap source.</p>
+          </div>
+          <div class="card-footer">
+            <a href="astgrep-report.html" class="btn btn-outline-primary w-100">View Report</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">ESLint Report</h5>
+            <p class="card-text">JavaScript linting report &mdash; code quality, style, and potential issues found by ESLint.</p>
+          </div>
+          <div class="card-footer">
+            <a href="eslint-report.html" class="btn btn-outline-primary w-100">View Report</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 benchmark-card">
+          <div class="card-body">
+            <h5 class="card-title">Stylelint Report</h5>
+            <p class="card-text">CSS linting report &mdash; style issues, best practices, and potential problems found by Stylelint.</p>
+          </div>
+          <div class="card-footer">
+            <a href="stylelint-report.html" class="btn btn-outline-primary w-100">View Report</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5">
     <p class="text-body-secondary">
       Using Bootstrap <strong>5.3.8</strong> from jsDelivr CDN.
       Native API benchmarks use zero external JavaScript libraries.

@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bootstrap v6 — AST Pattern Analysis Report</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/prism.min.css" rel="stylesheet">
+<style>
+  /* Only custom CSS for things Bootstrap 5 doesn't provide */
+  .rule-section.collapsed .card-body { display: none; }
+  .rule-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+  .toggle-icon { transition: transform 0.2s; }
+  .code-current { background: #fff5f5; word-break: break-all; }
+  .code-fix { background: #f0fdf4; word-break: break-all; }
+  .pattern-before { background: #fff5f5; border-color: #fecaca; }
+  .pattern-after { background: #f0fdf4; border-color: #bbf7d0; }
+  /* Prism overrides for our layout */
+  .pattern-before pre[class*="language-"],
+  .pattern-after pre[class*="language-"] { background: transparent; margin: 0; padding: 0; border-radius: 0; }
+  td code[class*="language-"] { background: transparent; padding: 0; white-space: pre-wrap; word-break: break-all; font-size: inherit; }
+</style>
+</head>
+<body>
+
+<div class="bg-primary text-white py-4 px-3">
+  <div class="container">
+    <h1 class="h3 fw-bold mb-1">Bootstrap v6 — AST Pattern Analysis Report</h1>
+    <p class="opacity-75 mb-1">Structural code patterns found via ast-grep (complements ESLint report)</p>
+    <p class="small opacity-50 mb-3">These are not errors — they are opportunities for modernization that require human review</p>
+    <div class="d-flex gap-3">
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">73</strong>
+        <small class="text-uppercase opacity-75">Matches</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">13</strong>
+        <small class="text-uppercase opacity-75">Patterns</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">20</strong>
+        <small class="text-uppercase opacity-75">Files affected</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+
+  <div class="alert alert-warning" role="alert">
+    <strong>Note:</strong> Unlike ESLint warnings, these patterns are not auto-fixable. Each match requires human judgment —
+    some may be intentional, some may have valid reasons for the current approach. This report identifies
+    <em>opportunities</em> to consider, not prescriptive changes.
+  </div>
+  <h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-warning border-2">Modern JS Operators</h2>
+
+  <div class="card mb-4 rule-section" id="typeof-undefined">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">typeof x !== 'undefined' checks</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">3</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">In modern JS, <code>x != null</code> covers both <code>undefined</code> and <code>null</code>. Or use optional chaining <code>?.</code> / nullish coalescing <code>??</code> for safe access.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">typeof x !== 'undefined'</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">x !== undefined
+— or —
+x?.prop ?? fallback</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">231:9</td>
+            <td class="code-current"><code class="language-javascript">if (typeof callable !== 'undefined') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (callable !== undefined) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">79:10</td>
+            <td class="code-current"><code class="language-javascript">return typeof object.nodeType !== 'undefined'</code></td>
+            <td class="code-fix"><code class="language-javascript">return object.nodeType !== undefined</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">130:7</td>
+            <td class="code-current"><code class="language-javascript">if (typeof element.disabled !== 'undefined') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (element.disabled !== undefined) {</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="object-keys-iteration">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Object.keys() for iteration</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">6</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">When iterating object entries, <code>Object.entries()</code> gives both key and value. <code>Object.keys(x).includes(y)</code> can be <code>Object.hasOwn(x, y)</code>.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">for (const key of Object.keys(obj)) { ... }
+Object.keys(obj).includes(name)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">for (const [key, val] of Object.entries(obj)) { ... }
+Object.hasOwn(obj, name)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/floating-ui.js</td>
+            <td class="font-monospace text-secondary text-nowrap">108:28</td>
+            <td class="code-current"><code class="language-javascript">for (const breakpoint of Object.keys(BREAKPOINTS)) {</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/manipulator.js</td>
+            <td class="font-monospace text-secondary text-nowrap">55:20</td>
+            <td class="code-current"><code class="language-javascript">const bsKeys = Object.keys(element.dataset).filter(key =&gt; key.startsWith('bs') &amp;&amp; !key.startsWith('bsConfig'))</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">100:10</td>
+            <td class="code-current"><code class="language-javascript">if (!Object.keys(allowList).includes(elementName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (!Object.hasOwn(allowList, elementName)) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">233:12</td>
+            <td class="code-current"><code class="language-javascript">if (!Object.keys(storeElementEvent).length) {</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">242:34</td>
+            <td class="code-current"><code class="language-javascript">for (const elementEvent of Object.keys(events)) {</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">654:33</td>
+            <td class="code-current"><code class="language-javascript">for (const dataAttribute of Object.keys(dataAttributes)) {</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="object-keys-length">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Object.keys(x).length for empty check</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">1</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Checking <code>Object.keys(x).length</code> allocates an array just to count properties. This is a minor performance consideration — acceptable for infrequent calls, but worth noting in hot paths.</p>
+      
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">if (!Object.keys(obj).length) { ... }</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">// Acceptable pattern, but allocates an array
+// Consider extracting to a utility for hot paths</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">233:12</td>
+            <td class="code-current"><code class="language-javascript">if (!Object.keys(storeElementEvent).length) {</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-warning border-2">DOM Patterns</h2>
+
+  <div class="card mb-4 rule-section" id="object-assign-style">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Object.assign() on element.style</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">3</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">While <code>Object.assign(el.style, {...})</code> works, consider if individual <code>el.style.prop = val</code> assignments or CSS class toggles would be cleaner. Note: <code>cssText</code> overwrites all inline styles, while <code>Object.assign</code> merges.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">Object.assign(el.style, { left: x, top: y })</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.style.left = `${x}px`
+el.style.top = `${y}px`
+— or CSS class toggle —
+el.classList.add('positioned')</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">462:5</td>
+            <td class="code-current"><code class="language-javascript">Object.assign(tip.style, {
+      position: 'absolute',
+      left: `${x}px`,
+      top: `${y}px`
+    })</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">484:7</td>
+            <td class="code-current"><code class="language-javascript">Object.assign(arrowElement.style, {
+        left: isVertical &amp;&amp; arrowX !== null ? `${arrowX}px` : '',
+        top: !isVertical &amp;&amp; arrowY !== null ? `${arrowY}px` : '',
+        // Reset the other axis to let CSS handle it
+        right: '',
+        bottom: ''
+      })</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">469:5</td>
+            <td class="code-current"><code class="language-javascript">Object.assign(floating.style, {
+      position: 'absolute',
+      left: `${x}px`,
+      top: `${y}px`,
+      margin: '0'
+    })</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="classname-assignment">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">element.className = ... assignment</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">4</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>element.className = 'foo'</code> replaces all classes. Prefer <code>classList.add()</code>/<code>classList.toggle()</code> for safer class manipulation, or <code>classList.value</code> for full replacement.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Element/classList" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.className = 'my-class'</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.classList.add('my-class')
+— or for full set —
+el.classList.value = 'my-class'</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/backdrop.js</td>
+            <td class="font-monospace text-secondary text-nowrap">114:7</td>
+            <td class="code-current"><code class="language-javascript">backdrop.className = this._config.className</code></td>
+            <td class="code-fix"><code class="language-javascript">backdrop.classList.value = this._config.className</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">275:5</td>
+            <td class="code-current"><code class="language-javascript">input.className = 'form-ghost'</code></td>
+            <td class="code-fix"><code class="language-javascript">input.classList.value = 'form-ghost'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">307:5</td>
+            <td class="code-current"><code class="language-javascript">chip.className = CLASS_NAME_CHIP</code></td>
+            <td class="code-fix"><code class="language-javascript">chip.classList.value = CLASS_NAME_CHIP</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">322:5</td>
+            <td class="code-current"><code class="language-javascript">button.className = CLASS_NAME_CHIP_DISMISS</code></td>
+            <td class="code-fix"><code class="language-javascript">button.classList.value = CLASS_NAME_CHIP_DISMISS</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="createelement">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">document.createElement() + manual setup</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">5</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Multiple <code>createElement</code> + <code>className</code> + <code>innerHTML</code> chains can be replaced with <code>&lt;template&gt;</code> elements or a single <code>innerHTML</code> string for cleaner DOM construction. Note: <code>createElement</code> is fast for simple elements — review on case-by-case basis.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">const el = document.createElement('div')
+el.className = 'foo'
+el.innerHTML = '...'</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">const tpl = `&lt;div class=&quot;foo&quot;&gt;...&lt;/div&gt;`
+container.insertAdjacentHTML('beforeend', tpl)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/template-factory.js</td>
+            <td class="font-monospace text-secondary text-nowrap">85:29</td>
+            <td class="code-current"><code class="language-javascript">const templateWrapper = document.createElement('div')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/backdrop.js</td>
+            <td class="font-monospace text-secondary text-nowrap">113:24</td>
+            <td class="code-current"><code class="language-javascript">const backdrop = document.createElement('div')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">273:19</td>
+            <td class="code-current"><code class="language-javascript">const input = document.createElement('input')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">306:18</td>
+            <td class="code-current"><code class="language-javascript">const chip = document.createElement('span')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">320:20</td>
+            <td class="code-current"><code class="language-javascript">const button = document.createElement('button')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="innerhtml-assignment">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">innerHTML assignment</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">4</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>innerHTML</code> triggers full HTML parsing and can be an XSS vector. Consider <code>textContent</code> for text-only, or <code>replaceChildren()</code> + DOM nodes for structured content. Bootstrap sanitizes, but it is worth auditing.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Element/replaceChildren" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.innerHTML = userContent</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.textContent = text        // for plain text
+el.replaceChildren(...nodes)  // for DOM nodes</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/template-factory.js</td>
+            <td class="font-monospace text-secondary text-nowrap">86:5</td>
+            <td class="code-current"><code class="language-javascript">templateWrapper.innerHTML = this._maybeSanitize(this._config.template)</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/template-factory.js</td>
+            <td class="font-monospace text-secondary text-nowrap">134:7</td>
+            <td class="code-current"><code class="language-javascript">templateElement.innerHTML = this._maybeSanitize(content)</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/template-factory.js</td>
+            <td class="font-monospace text-secondary text-nowrap">151:7</td>
+            <td class="code-current"><code class="language-javascript">templateElement.innerHTML = ''</code></td>
+            <td class="code-fix"><code class="language-javascript">templateElement.replaceChildren()</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">325:5</td>
+            <td class="code-current"><code class="language-javascript">button.innerHTML = this._config.dismissIcon</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="parentnode">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">.parentNode usage</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">10</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>parentNode</code> can return non-Element nodes (Document, DocumentFragment). <code>parentElement</code> is safer when you expect an Element. Also consider <code>.closest(selector)</code> for ancestor traversal.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Node/parentElement" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">element.parentNode</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">element.parentElement       // guaranteed Element|null
+element.closest('selector') // ancestor lookup</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">50:20</td>
+            <td class="code-current"><code class="language-javascript">let ancestor = element.parentNode.closest(selector)</code></td>
+            <td class="code-fix"><code class="language-javascript">let ancestor = element.parentElement.closest(selector)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">54:18</td>
+            <td class="code-current"><code class="language-javascript">ancestor = ancestor.parentNode.closest(selector)</code></td>
+            <td class="code-fix"><code class="language-javascript">ancestor = ancestor.parentElement.closest(selector)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">offcanvas.js</td>
+            <td class="font-monospace text-secondary text-nowrap">183:20</td>
+            <td class="code-current"><code class="language-javascript">rootElement: this._element.parentNode,</code></td>
+            <td class="code-fix"><code class="language-javascript">rootElement: this._element.parentElement,</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">109:20</td>
+            <td class="code-current"><code class="language-javascript">if (summary &amp;&amp; summary.parentNode !== closedDetails) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (summary &amp;&amp; summary.parentElement !== closedDetails) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">153:8</td>
+            <td class="code-current"><code class="language-javascript">if (!element.parentNode) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (!element.parentElement) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">157:25</td>
+            <td class="code-current"><code class="language-javascript">return findShadowRoot(element.parentNode)</code></td>
+            <td class="code-fix"><code class="language-javascript">return findShadowRoot(element.parentElement)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">104:70</td>
+            <td class="code-current"><code class="language-javascript">for (let { target } = event; target &amp;&amp; target !== this; target = target.parentNode) {</code></td>
+            <td class="code-fix"><code class="language-javascript">for (let { target } = event; target &amp;&amp; target !== this; target = target.parentElement) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">137:20</td>
+            <td class="code-current"><code class="language-javascript">this._parent = this._element.parentNode // dropdown wrapper</code></td>
+            <td class="code-fix"><code class="language-javascript">this._parent = this._element.parentElement // dropdown wrapper</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">644:20</td>
+            <td class="code-current"><code class="language-javascript">const parent = currentSubmenuWrapper.parentNode</code></td>
+            <td class="code-fix"><code class="language-javascript">const parent = currentSubmenuWrapper.parentElement</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">927:54</td>
+            <td class="code-current"><code class="language-javascript">SelectorEngine.findOne(SELECTOR_DATA_TOGGLE, event.delegateTarget.parentNode))</code></td>
+            <td class="code-fix"><code class="language-javascript">SelectorEngine.findOne(SELECTOR_DATA_TOGGLE, event.delegateTarget.parentElement))</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="aria-set-attribute">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">setAttribute() / removeAttribute() for ARIA properties</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">16</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">ARIA IDL properties like <code>el.ariaExpanded</code>, <code>el.ariaSelected</code>, <code>el.ariaLabel</code> provide direct property access instead of string-based <code>setAttribute()</code>. Cleaner syntax and avoids string typos. Supported in Chrome 81+, Firefox 119+, Safari 12.1+.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaExpanded" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.setAttribute('aria-expanded', 'true')
+el.removeAttribute('aria-current')</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.ariaExpanded = 'true'
+el.ariaCurrent = null</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">button.js</td>
+            <td class="font-monospace text-secondary text-nowrap">37:5</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('aria-pressed', this._element.classList.toggle(CLASS_NAME_ACTIVE))</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.ariaPressed = this._element.classList.toggle(CLASS_NAME_ACTIVE)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">offcanvas.js</td>
+            <td class="font-monospace text-secondary text-nowrap">110:5</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('aria-modal', true)</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.ariaModal = true</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">collapse.js</td>
+            <td class="font-monospace text-secondary text-nowrap">250:7</td>
+            <td class="code-current"><code class="language-javascript">element.setAttribute('aria-expanded', isOpen)</code></td>
+            <td class="code-fix"><code class="language-javascript">element.ariaExpanded = isOpen</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">120:7</td>
+            <td class="code-current"><code class="language-javascript">element.setAttribute('aria-selected', true)</code></td>
+            <td class="code-fix"><code class="language-javascript">element.ariaSelected = true</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">146:7</td>
+            <td class="code-current"><code class="language-javascript">element.setAttribute('aria-selected', false)</code></td>
+            <td class="code-fix"><code class="language-javascript">element.ariaSelected = false</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">199:5</td>
+            <td class="code-current"><code class="language-javascript">child.setAttribute('aria-selected', isActive)</code></td>
+            <td class="code-fix"><code class="language-javascript">child.ariaSelected = isActive</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">244:5</td>
+            <td class="code-current"><code class="language-javascript">outerElem.setAttribute('aria-expanded', open)</code></td>
+            <td class="code-fix"><code class="language-javascript">outerElem.ariaExpanded = open</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">carousel.js</td>
+            <td class="font-monospace text-secondary text-nowrap">282:7</td>
+            <td class="code-current"><code class="language-javascript">newActiveIndicator.setAttribute('aria-current', 'true')</code></td>
+            <td class="code-fix"><code class="language-javascript">newActiveIndicator.ariaCurrent = 'true'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">323:5</td>
+            <td class="code-current"><code class="language-javascript">button.setAttribute('aria-label', 'Remove')</code></td>
+            <td class="code-fix"><code class="language-javascript">button.ariaLabel = 'Remove'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">223:5</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('aria-describedby', tip.getAttribute('id'))</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">606:7</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('aria-label', title)</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.ariaLabel = title</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">201:5</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('aria-expanded', 'true')</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.ariaExpanded = 'true'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">258:5</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('aria-expanded', 'false')</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.ariaExpanded = 'false'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">577:5</td>
+            <td class="code-current"><code class="language-javascript">trigger.setAttribute('aria-expanded', 'true')</code></td>
+            <td class="code-fix"><code class="language-javascript">trigger.ariaExpanded = 'true'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">578:5</td>
+            <td class="code-current"><code class="language-javascript">trigger.setAttribute('aria-haspopup', 'true')</code></td>
+            <td class="code-fix"><code class="language-javascript">trigger.ariaHaspopup = 'true'</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">622:7</td>
+            <td class="code-current"><code class="language-javascript">trigger.setAttribute('aria-expanded', 'false')</code></td>
+            <td class="code-fix"><code class="language-javascript">trigger.ariaExpanded = 'false'</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="aria-remove-attribute">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">removeAttribute() for ARIA properties</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">3</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Removing ARIA attributes can be done via IDL property assignment. Setting the property to <code>null</code> removes the underlying attribute.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Element/ariaExpanded" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.removeAttribute('aria-current')</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.ariaCurrent = null</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">offcanvas.js</td>
+            <td class="font-monospace text-secondary text-nowrap">146:7</td>
+            <td class="code-current"><code class="language-javascript">this._element.removeAttribute('aria-modal')</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.ariaModal = null</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">carousel.js</td>
+            <td class="font-monospace text-secondary text-nowrap">276:5</td>
+            <td class="code-current"><code class="language-javascript">activeIndicator.removeAttribute('aria-current')</code></td>
+            <td class="code-fix"><code class="language-javascript">activeIndicator.ariaCurrent = null</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">294:7</td>
+            <td class="code-current"><code class="language-javascript">this._element.removeAttribute('aria-describedby')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="tagname-check">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">tagName comparison instead of matches()</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">13</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>element.matches('selector')</code> is more flexible and readable than comparing <code>tagName</code>. It handles case-insensitive matching and supports complex selectors.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Element/matches" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.tagName === 'A'
+/input|textarea/i.test(el.tagName)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.matches('a')
+el.matches('input, textarea')</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">datepicker.js</td>
+            <td class="font-monospace text-secondary text-nowrap">171:21</td>
+            <td class="code-current"><code class="language-javascript">this._isInput = this._element.tagName === 'INPUT'</code></td>
+            <td class="code-fix"><code class="language-javascript">this._isInput = this._element.matches('input')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">datepicker.js</td>
+            <td class="font-monospace text-secondary text-nowrap">458:7</td>
+            <td class="code-current"><code class="language-javascript">if (this.tagName === 'INPUT' || this.dataset.bsInline === 'true') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (this.matches('input') || this.dataset.bsInline === 'true') {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">datepicker.js</td>
+            <td class="font-monospace text-secondary text-nowrap">468:7</td>
+            <td class="code-current"><code class="language-javascript">if (this.tagName !== 'INPUT') {</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">collapse.js</td>
+            <td class="font-monospace text-secondary text-nowrap">261:7</td>
+            <td class="code-current"><code class="language-javascript">if (event.target.tagName === 'A' || (event.delegateTarget &amp;&amp; event.delegateTarget.tagName === 'A')) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (event.target.matches('a') || (event.delegateTarget &amp;&amp; event.delegateTarget.tagName === 'A')) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">collapse.js</td>
+            <td class="font-monospace text-secondary text-nowrap">261:64</td>
+            <td class="code-current"><code class="language-javascript">if (event.target.tagName === 'A' || (event.delegateTarget &amp;&amp; event.delegateTarget.tagName === 'A')) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (event.target.matches('a') || (event.delegateTarget &amp;&amp; event.delegateTarget.tagName === 'A')) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">carousel.js</td>
+            <td class="font-monospace text-secondary text-nowrap">253:32</td>
+            <td class="code-current"><code class="language-javascript">if (/input|textarea/i.test(event.target.tagName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">event.target.matches('input, textarea')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/component-functions.js</td>
+            <td class="font-monospace text-secondary text-nowrap">17:32</td>
+            <td class="code-current"><code class="language-javascript">if (['A', 'AREA'].includes(this.tagName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">this.matches('a, area')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/component-functions.js</td>
+            <td class="font-monospace text-secondary text-nowrap">49:32</td>
+            <td class="code-current"><code class="language-javascript">if (['A', 'AREA'].includes(this.tagName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">this.matches('a, area')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">offcanvas.js</td>
+            <td class="font-monospace text-secondary text-nowrap">217:30</td>
+            <td class="code-current"><code class="language-javascript">if (['A', 'AREA'].includes(this.tagName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">this.matches('a, area')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dialog.js</td>
+            <td class="font-monospace text-secondary text-nowrap">229:30</td>
+            <td class="code-current"><code class="language-javascript">if (['A', 'AREA'].includes(this.tagName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">this.matches('a, area')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">273:30</td>
+            <td class="code-current"><code class="language-javascript">if (['A', 'AREA'].includes(this.tagName)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">this.matches('a, area')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">887:147</td>
+            <td class="code-current"><code class="language-javascript">if (context._menu.contains(event.target) &amp;&amp; ((event.type === 'keyup' &amp;&amp; event.key === TAB_KEY) || /input|select|option|textarea|form/i.test(event.target.tagName))) {</code></td>
+            <td class="code-fix"><code class="language-javascript">event.target.matches('input, select, option, textarea, form')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">903:44</td>
+            <td class="code-current"><code class="language-javascript">const isInput = /input|textarea/i.test(event.target.tagName)</code></td>
+            <td class="code-fix"><code class="language-javascript">event.target.matches('input, textarea')</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-warning border-2">Event Handling</h2>
+
+  <div class="card mb-4 rule-section" id="add-remove-event-listener">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">addEventListener / removeEventListener pairs</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">3</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Manual <code>removeEventListener</code> requires keeping a reference to the handler. <code>AbortController</code> + <code>{ signal }</code> option provides cleaner lifecycle management — call <code>controller.abort()</code> to remove all listeners at once.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#signal" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.addEventListener('click', handler)
+// later...
+el.removeEventListener('click', handler)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">const ac = new AbortController()
+el.addEventListener('click', handler, { signal: ac.signal })
+// later...
+ac.abort() // removes all listeners</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/floating-ui.js</td>
+            <td class="font-monospace text-secondary text-nowrap">126:5</td>
+            <td class="code-current"><code class="language-javascript">mql.removeEventListener('change', handler)</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">216:5</td>
+            <td class="code-current"><code class="language-javascript">transitionElement.removeEventListener(TRANSITION_END, handler)</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">191:3</td>
+            <td class="code-current"><code class="language-javascript">element.removeEventListener(typeEvent, fn, Boolean(delegationSelector))</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-warning border-2">Error Handling</h2>
+
+  <div class="card mb-4 rule-section" id="new-error-no-cause">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">new Error() without cause option</h2>
+      <code class="text-secondary small">ast-grep</code>
+      <span class="badge bg-warning text-dark text-uppercase small">needs review</span>
+      <span class="badge rounded-pill bg-primary">2</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">ES2022 <code>Error cause</code> option chains errors for better debugging. When re-throwing or wrapping errors, include <code>{ cause: originalError }</code>. Note: only useful when wrapping another error — standalone throws may not need it.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">throw new Error('Something failed')</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">throw new Error('Something failed', { cause: err })</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">util/config.js</td>
+            <td class="font-monospace text-secondary text-nowrap">26:11</td>
+            <td class="code-current"><code class="language-javascript">throw new Error('You have to implement the static method &quot;NAME&quot;, for each component!')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">204:13</td>
+            <td class="code-current"><code class="language-javascript">throw new Error('Please use show on visible elements')</code></td>
+            <td class="code-fix">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="text-center text-secondary small border-top py-4 mt-4">
+  Generated 2026-02-24 &middot; ast-grep &middot; Bootstrap v6 source (js/src/)
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/prism.min.js"></script>
+</body>
+</html>

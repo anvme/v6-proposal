@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bootstrap v6 — ESLint Modernization Report</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/prism.min.css" rel="stylesheet">
+<style>
+  /* Only custom CSS for things Bootstrap 5 doesn't provide */
+  .rule-section.collapsed .card-body { display: none; }
+  .rule-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+  .toggle-icon { transition: transform 0.2s; }
+  .code-current { background: #fff5f5; word-break: break-all; }
+  .code-fix { background: #f0fdf4; word-break: break-all; }
+  .pattern-before { background: #fff5f5; border-color: #fecaca; }
+  .pattern-after { background: #f0fdf4; border-color: #bbf7d0; }
+  /* Prism overrides for our layout */
+  .pattern-before pre[class*="language-"],
+  .pattern-after pre[class*="language-"] { background: transparent; margin: 0; padding: 0; border-radius: 0; }
+  td code[class*="language-"] { background: transparent; padding: 0; white-space: pre-wrap; word-break: break-all; font-size: inherit; }
+</style>
+</head>
+<body>
+
+<div class="bg-primary text-white py-4 px-3">
+  <div class="container">
+    <h1 class="h3 fw-bold mb-1">Bootstrap v6 — ESLint Modernization Report</h1>
+    <p class="opacity-75 mb-3">Outdated JS patterns that can be replaced with modern alternatives</p>
+    <div class="d-flex gap-3">
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">78</strong>
+        <small class="text-uppercase opacity-75">Warnings</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">14</strong>
+        <small class="text-uppercase opacity-75">Rules</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">20</strong>
+        <small class="text-uppercase opacity-75">Files affected</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-global-this">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer globalThis over window</h2>
+      <code class="text-secondary small">unicorn/prefer-global-this</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">15</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>globalThis</code> is the standard way to access the global object across all JS environments (browser, Node, workers, Deno). <code>window</code> only works in browsers and fails in SSR/testing contexts.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">window.addEventListener(...)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">globalThis.addEventListener(...)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/carousel.js</td>
+            <td class="font-monospace text-secondary text-nowrap">437:17</td>
+            <td class="code-current"><code class="language-javascript">EventHandler.on(window, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+            <td class="code-fix"><code class="language-javascript">EventHandler.on(globalThis, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">603:48</td>
+            <td class="code-current"><code class="language-javascript">const pastedData = (event.clipboardData || window.clipboardData).getData('text')</code></td>
+            <td class="code-fix"><code class="language-javascript">const pastedData = (event.clipboardData || globalThis.clipboardData).getData('text')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/offcanvas.js</td>
+            <td class="font-monospace text-secondary text-nowrap">242:17</td>
+            <td class="code-current"><code class="language-javascript">EventHandler.on(window, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+            <td class="code-fix"><code class="language-javascript">EventHandler.on(globalThis, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/offcanvas.js</td>
+            <td class="font-monospace text-secondary text-nowrap">248:17</td>
+            <td class="code-current"><code class="language-javascript">EventHandler.on(window, EVENT_RESIZE, () =&gt; {</code></td>
+            <td class="code-fix"><code class="language-javascript">EventHandler.on(globalThis, EVENT_RESIZE, () =&gt; {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/otp-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">212:48</td>
+            <td class="code-current"><code class="language-javascript">const pastedData = (event.clipboardData || window.clipboardData).getData('text')</code></td>
+            <td class="code-fix"><code class="language-javascript">const pastedData = (event.clipboardData || globalThis.clipboardData).getData('text')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/scrollspy.js</td>
+            <td class="font-monospace text-secondary text-nowrap">133:43</td>
+            <td class="code-current"><code class="language-javascript">const root = this._rootElement || window</code></td>
+            <td class="code-fix"><code class="language-javascript">const root = this._rootElement || globalThis</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/scrollspy.js</td>
+            <td class="font-monospace text-secondary text-nowrap">261:17</td>
+            <td class="code-current"><code class="language-javascript">EventHandler.on(window, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+            <td class="code-fix"><code class="language-javascript">EventHandler.on(globalThis, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">287:17</td>
+            <td class="code-current"><code class="language-javascript">EventHandler.on(window, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+            <td class="code-fix"><code class="language-javascript">EventHandler.on(globalThis, EVENT_LOAD_DATA_API, () =&gt; {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/floating-ui.js</td>
+            <td class="font-monospace text-secondary text-nowrap">110:17</td>
+            <td class="code-current"><code class="language-javascript">const mql = window.matchMedia(`(min-width: ${minWidth}px)`)</code></td>
+            <td class="code-fix"><code class="language-javascript">const mql = globalThis.matchMedia(`(min-width: ${minWidth}px)`)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">18:19</td>
+            <td class="code-current"><code class="language-javascript">if (selector &amp;&amp; window.CSS &amp;&amp; window.CSS.escape) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (selector &amp;&amp; globalThis.CSS &amp;&amp; window.CSS.escape) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">18:33</td>
+            <td class="code-current"><code class="language-javascript">if (selector &amp;&amp; window.CSS &amp;&amp; window.CSS.escape) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (selector &amp;&amp; window.CSS &amp;&amp; globalThis.CSS.escape) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">53:49</td>
+            <td class="code-current"><code class="language-javascript">let { transitionDuration, transitionDelay } = window.getComputedStyle(element)</code></td>
+            <td class="code-fix"><code class="language-javascript">let { transitionDuration, transitionDelay } = globalThis.getComputedStyle(element)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">93:25</td>
+            <td class="code-current"><code class="language-javascript">const domParser = new window.DOMParser()</code></td>
+            <td class="code-fix"><code class="language-javascript">const domParser = new globalThis.DOMParser()</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/scrollbar.js</td>
+            <td class="font-monospace text-secondary text-nowrap">72:31</td>
+            <td class="code-current"><code class="language-javascript">const calculatedValue = window.getComputedStyle(element).getPropertyValue(styleProperty)</code></td>
+            <td class="code-fix"><code class="language-javascript">const calculatedValue = globalThis.getComputedStyle(element).getPropertyValue(styleProperty)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/swipe.js</td>
+            <td class="font-monospace text-secondary text-nowrap">55:42</td>
+            <td class="code-current"><code class="language-javascript">this._supportPointerEvents = Boolean(window.PointerEvent)</code></td>
+            <td class="code-fix"><code class="language-javascript">this._supportPointerEvents = Boolean(globalThis.PointerEvent)</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-spread">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer spread operator over Array.from / concat / split</h2>
+      <code class="text-secondary small">unicorn/prefer-spread</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">12</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">The spread operator <code>[...iterable]</code> is more readable and often faster than <code>Array.from()</code>, <code>[].concat()</code>, or <code>String#split("")</code>.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">[].concat(...arrays)
+Array.from(nodeList)
+str.split(&quot;&quot;)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">[...arrays].flat()
+[...nodeList]
+[...str]</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/data.js</td>
+            <td class="font-monospace text-secondary text-nowrap">26:100</td>
+            <td class="code-current"><code class="language-javascript">console.error(`Bootstrap doesn't allow more than one instance per element. Bound instance: ${Array.from(instanceMap.keys())[0]}.`)</code></td>
+            <td class="code-fix"><code class="language-javascript">console.error(`Bootstrap doesn't allow more than one instance per element. Bound instance: ${[...instanceMap.keys()][0]}.`)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">37:15</td>
+            <td class="code-current"><code class="language-javascript">return [].concat(...Element.prototype.querySelectorAll.call(element, selector))</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">45:15</td>
+            <td class="code-current"><code class="language-javascript">return [].concat(...element.children).filter(child =&gt; child.matches(selector))</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">195:32</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">248:32</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/otp-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">69:33</td>
+            <td class="code-current"><code class="language-javascript">const chars = String(value).split('')</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/otp-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">139:27</td>
+            <td class="code-current"><code class="language-javascript">const chars = value.split('')</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">241:32</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">275:32</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">95:23</td>
+            <td class="code-current"><code class="language-javascript">const elements = [].concat(...createdDocument.body.querySelectorAll('*'))</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">105:30</td>
+            <td class="code-current"><code class="language-javascript">const attributeList = [].concat(...element.attributes)</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">106:34</td>
+            <td class="code-current"><code class="language-javascript">const allowedAttributes = [].concat(allowList['*'] || [], allowList[elementName] || [])</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-dom-node-dataset">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer .dataset over getAttribute/setAttribute for data-* attributes</h2>
+      <code class="text-secondary small">unicorn/prefer-dom-node-dataset</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">9</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>element.dataset</code> provides a clean API for <code>data-*</code> attributes. No need for manual string manipulation with <code>getAttribute("data-...")</code>.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">el.getAttribute(&quot;data-bs-interval&quot;)
+el.setAttribute(&quot;data-bs-foo&quot;, val)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">el.dataset.bsInterval
+el.dataset.bsFoo = val</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/carousel.js</td>
+            <td class="font-monospace text-secondary text-nowrap">293:45</td>
+            <td class="code-current"><code class="language-javascript">const elementInterval = Number.parseInt(element.getAttribute('data-bs-interval'), 10)</code></td>
+            <td class="code-fix"><code class="language-javascript">const elementInterval = Number.parseInt(element.dataset.bsInterval, 10)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/carousel.js</td>
+            <td class="font-monospace text-secondary text-nowrap">419:22</td>
+            <td class="code-current"><code class="language-javascript">const slideIndex = this.getAttribute('data-bs-slide-to')</code></td>
+            <td class="code-fix"><code class="language-javascript">const slideIndex = this.dataset.bsSlideTo</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/datepicker.js</td>
+            <td class="font-monospace text-secondary text-nowrap">280:7</td>
+            <td class="code-current"><code class="language-javascript">element.setAttribute('data-bs-theme', theme)</code></td>
+            <td class="code-fix"><code class="language-javascript">element.dataset.bsTheme = theme</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/datepicker.js</td>
+            <td class="font-monospace text-secondary text-nowrap">283:7</td>
+            <td class="code-current"><code class="language-javascript">element.removeAttribute('data-bs-theme')</code></td>
+            <td class="code-fix"><code class="language-javascript">delete element.dataset.bsTheme</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">11:18</td>
+            <td class="code-current"><code class="language-javascript">let selector = element.getAttribute('data-bs-target')</code></td>
+            <td class="code-fix"><code class="language-javascript">let selector = element.dataset.bsTarget</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">193:9</td>
+            <td class="code-current"><code class="language-javascript">if (this._element.getAttribute('data-bs-original-title')) {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (this._element.dataset.bsOriginalTitle) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">194:43</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('title', this._element.getAttribute('data-bs-original-title'))</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.setAttribute('title', this._element.dataset.bsOriginalTitle)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">368:65</td>
+            <td class="code-current"><code class="language-javascript">return this._resolvePossibleFunction(this._config.title) || this._element.getAttribute('data-bs-original-title')</code></td>
+            <td class="code-fix"><code class="language-javascript">return this._resolvePossibleFunction(this._config.title) || this._element.dataset.bsOriginalTitle</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">609:5</td>
+            <td class="code-current"><code class="language-javascript">this._element.setAttribute('data-bs-original-title', title) // DO NOT USE IT. Is only for backwards compatibility</code></td>
+            <td class="code-fix"><code class="language-javascript">this._element.dataset.bsOriginalTitle = title // DO NOT USE IT. Is only for backwards compatibility</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-array-flat">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer Array#flat() over [].concat() tricks</h2>
+      <code class="text-secondary small">unicorn/prefer-array-flat</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">8</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>Array#flat()</code> is the standard, readable way to flatten arrays. The old <code>[].concat(...arr)</code> pattern was a workaround before <code>flat()</code> existed.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">[].concat(...nestedArray)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">nestedArray.flat()</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">37:12</td>
+            <td class="code-current"><code class="language-javascript">return [].concat(...Element.prototype.querySelectorAll.call(element, selector))</code></td>
+            <td class="code-fix"><code class="language-javascript">return Element.prototype.querySelectorAll.call(element, selector).flat()</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">45:12</td>
+            <td class="code-current"><code class="language-javascript">return [].concat(...element.children).filter(child =&gt; child.matches(selector))</code></td>
+            <td class="code-fix"><code class="language-javascript">return element.children.flat().filter(child =&gt; child.matches(selector))</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">195:29</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">for (const element of document.body.children.flat()) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">248:29</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">for (const element of document.body.children.flat()) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">241:29</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">for (const element of document.body.children.flat()) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">275:29</td>
+            <td class="code-current"><code class="language-javascript">for (const element of [].concat(...document.body.children)) {</code></td>
+            <td class="code-fix"><code class="language-javascript">for (const element of document.body.children.flat()) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">95:20</td>
+            <td class="code-current"><code class="language-javascript">const elements = [].concat(...createdDocument.body.querySelectorAll('*'))</code></td>
+            <td class="code-fix"><code class="language-javascript">const elements = createdDocument.body.querySelectorAll('*').flat()</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/sanitizer.js</td>
+            <td class="font-monospace text-secondary text-nowrap">105:27</td>
+            <td class="code-current"><code class="language-javascript">const attributeList = [].concat(...element.attributes)</code></td>
+            <td class="code-fix"><code class="language-javascript">const attributeList = element.attributes.flat()</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-consistent-destructuring">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Use destructured variables consistently</h2>
+      <code class="text-secondary small">unicorn/consistent-destructuring</code>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">7</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">If a variable was destructured from an object, always use the destructured variable instead of accessing the property again on the original object.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">const { foo } = obj
+console.log(obj.bar)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">const { foo, bar } = obj
+console.log(bar)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">439:17</td>
+            <td class="code-current"><code class="language-javascript">if (event.shiftKey) {</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">465:18</td>
+            <td class="code-current"><code class="language-javascript">const chip = event.target.closest(SELECTOR_CHIP)</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">483:53</td>
+            <td class="code-current"><code class="language-javascript">this._navigateChip(chips, currentIndex, -1, event.shiftKey)</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">489:52</td>
+            <td class="code-current"><code class="language-javascript">this._navigateChip(chips, currentIndex, 1, event.shiftKey)</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/chip-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">495:40</td>
+            <td class="code-current"><code class="language-javascript">this._navigateToEdge(chips, 0, event.shiftKey)</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/strength.js</td>
+            <td class="font-monospace text-secondary text-nowrap">150:28</td>
+            <td class="code-current"><code class="language-javascript">if (password.length &gt;= this._config.minLength) {</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/strength.js</td>
+            <td class="font-monospace text-secondary text-nowrap">154:28</td>
+            <td class="code-current"><code class="language-javascript">if (password.length &gt;= this._config.minLength + 4) {</code></td>
+            
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="logical-assignment-operators">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Use logical assignment operators (||=, &&=, ??=)</h2>
+      <code class="text-secondary small">logical-assignment-operators</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">6</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Logical assignment operators combine a logical operation with assignment in a single, concise expression. Reduces boilerplate and makes intent clearer.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_OR_assignment" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">x = x || defaultValue
+if (!x) { x = fallback }</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">x ||= defaultValue
+x ||= fallback</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">83:3</td>
+            <td class="code-current"><code class="language-javascript">eventRegistry[uid] = eventRegistry[uid] || {}</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">161:20</td>
+            <td class="code-current"><code class="language-javascript">const handlers = events[typeEvent] || (events[typeEvent] = {})</code></td>
+            <td class="code-fix"><code class="language-javascript">const handlers = (events[typeEvent] ||= {})</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">165:5</td>
+            <td class="code-current"><code class="language-javascript">previousFunction.oneOff = previousFunction.oneOff &amp;&amp; oneOff</code></td>
+            <td class="code-fix">—</td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">313:5</td>
+            <td class="code-current"><code class="language-javascript">if (!this.tip) {</code></td>
+            <td class="code-fix"><code class="language-javascript">this.tip ||= this._createTipElement(this._newContent || this._getContentForTemplate());</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">444:5</td>
+            <td class="code-current"><code class="language-javascript">if (!placement) {</code></td>
+            <td class="code-fix"><code class="language-javascript">placement ||= this._getPlacement(tip);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">448:5</td>
+            <td class="code-current"><code class="language-javascript">if (!arrowElement) {</code></td>
+            <td class="code-fix"><code class="language-javascript">arrowElement ||= tip.querySelector(`.${this.constructor.NAME}-arrow`);</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-no-typeof-undefined">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Avoid typeof check for undefined</h2>
+      <code class="text-secondary small">unicorn/no-typeof-undefined</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">5</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>typeof x !== "undefined"</code> is a legacy pattern. Since ES5, <code>undefined</code> is non-writable on the global object, so direct comparison <code>x !== undefined</code> is safe and shorter.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">if (typeof x !== &quot;undefined&quot;) { ... }</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">if (x !== undefined) { ... }</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/event-handler.js</td>
+            <td class="font-monospace text-secondary text-nowrap">231:9</td>
+            <td class="code-current"><code class="language-javascript">if (typeof callable !== 'undefined') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (callable !== undefined) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">128:9</td>
+            <td class="code-current"><code class="language-javascript">if (typeof computePosition === 'undefined') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (computePosition === undefined) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tooltip.js</td>
+            <td class="font-monospace text-secondary text-nowrap">121:9</td>
+            <td class="code-current"><code class="language-javascript">if (typeof computePosition === 'undefined') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (computePosition === undefined) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">79:10</td>
+            <td class="code-current"><code class="language-javascript">return typeof object.nodeType !== 'undefined'</code></td>
+            <td class="code-fix"><code class="language-javascript">return object.nodeType !== undefined</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">130:7</td>
+            <td class="code-current"><code class="language-javascript">if (typeof element.disabled !== 'undefined') {</code></td>
+            <td class="code-fix"><code class="language-javascript">if (element.disabled !== undefined) {</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="no-warning-comments">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">TODO comments flagged for v6</h2>
+      <code class="text-secondary small">no-warning-comments</code>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">5</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">These are action items left by the Bootstrap team specifically for the v6 release. They should be resolved now.</p>
+      
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">// TODO: v6 revert #37011 &amp; change markup</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">(resolve the TODO — implement the change)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/selector-engine.js</td>
+            <td class="font-monospace text-secondary text-nowrap">74:3</td>
+            <td class="code-current"><code class="language-javascript">// TODO: this is now unused; remove later along with prev()</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">143:5</td>
+            <td class="code-current"><code class="language-javascript">// TODO: v6 revert #37011 &amp; change markup https://getbootstrap.com/docs/5.3/forms/input-group/</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">922:5</td>
+            <td class="code-current"><code class="language-javascript">// TODO: v6 revert #37011 &amp; change markup https://getbootstrap.com/docs/5.3/forms/input-group/</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">48:105</td>
+            <td class="code-current"><code class="language-javascript">const SELECTOR_DATA_TOGGLE = '[data-bs-toggle=&quot;tab&quot;], [data-bs-toggle=&quot;pill&quot;], [data-bs-toggle=&quot;list&quot;]' // TODO: could only be `tab` in v6</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/tab.js</td>
+            <td class="font-monospace text-secondary text-nowrap">64:7</td>
+            <td class="code-current"><code class="language-javascript">// TODO: should throw exception in v6</code></td>
+            
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-string-replace-all">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer String#replaceAll() over regex replace</h2>
+      <code class="text-secondary small">unicorn/prefer-string-replace-all</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">4</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>replaceAll()</code> is clearer than <code>replace(/pattern/g, ...)</code> for simple string replacements. No need to escape regex special characters.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replaceAll" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">str.replace(/foo/g, &quot;bar&quot;)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">str.replaceAll(&quot;foo&quot;, &quot;bar&quot;)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dom/manipulator.js</td>
+            <td class="font-monospace text-secondary text-nowrap">37:14</td>
+            <td class="code-current"><code class="language-javascript">return key.replace(/[A-Z]/g, chr =&gt; `-${chr.toLowerCase()}`)</code></td>
+            <td class="code-fix"><code class="language-javascript">return key.replaceAll(/[A-Z]/g, chr =&gt; `-${chr.toLowerCase()}`)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/otp-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">131:33</td>
+            <td class="code-current"><code class="language-javascript">input.value = input.value.replace(/\D/g, '')</code></td>
+            <td class="code-fix"><code class="language-javascript">input.value = input.value.replaceAll(/\D/g, '')</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/otp-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">213:31</td>
+            <td class="code-current"><code class="language-javascript">const digits = pastedData.replace(/\D/g, '').slice(0, this._inputs.length)</code></td>
+            <td class="code-fix"><code class="language-javascript">const digits = pastedData.replaceAll(/\D/g, '').slice(0, this._inputs.length)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">20:25</td>
+            <td class="code-current"><code class="language-javascript">selector = selector.replace(/#([^\s&quot;#']+)/g, (match, id) =&gt; `#${CSS.escape(id)}`)</code></td>
+            <td class="code-fix"><code class="language-javascript">selector = selector.replaceAll(/#([^\s&quot;#']+)/g, (match, id) =&gt; `#${CSS.escape(id)}`)</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-at">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer .at() for index access from end</h2>
+      <code class="text-secondary small">unicorn/prefer-at</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">2</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>Array#at(-1)</code> is the modern way to access elements from the end. More readable than <code>arr[arr.length - 1]</code>.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">items[items.length - 1]</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">items.at(-1)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">853:64</td>
+            <td class="code-current"><code class="language-javascript">const targetItem = key === HOME_KEY ? items[0] : items[items.length - 1]</code></td>
+            <td class="code-fix"><code class="language-javascript">const targetItem = key === HOME_KEY ? items[0] : items.at(-1)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/focustrap.js</td>
+            <td class="font-monospace text-secondary text-nowrap">100:16</td>
+            <td class="code-current"><code class="language-javascript">elements[elements.length - 1].focus()</code></td>
+            <td class="code-fix"><code class="language-javascript">elements.at(-1).focus()</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="prefer-named-capture-group">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Use named capture groups in regex</h2>
+      <code class="text-secondary small">prefer-named-capture-group</code>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">2</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Named capture groups <code>(?&lt;name&gt;...)</code> make regex matches self-documenting. Accessing <code>match.groups.name</code> is clearer than <code>match[1]</code>.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Named_capturing_group" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">const match = /^(\d+)-(\w+)$/.exec(str)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">const match = /^(?&lt;num&gt;\d+)-(?&lt;id&gt;\w+)$/.exec(str)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">20:33</td>
+            <td class="code-current"><code class="language-javascript">selector = selector.replace(/#([^\s&quot;#']+)/g, (match, id) =&gt; `#${CSS.escape(id)}`)</code></td>
+            
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">32:55</td>
+            <td class="code-current"><code class="language-javascript">return Object.prototype.toString.call(object).match(/\s([a-z]+)/i)[1].toLowerCase()</code></td>
+            
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="complexity">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">High cyclomatic complexity</h2>
+      <code class="text-secondary small">complexity</code>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">1</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Methods with complexity > 20 are hard to test and maintain. Consider breaking into smaller, focused functions.</p>
+      
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">function bigMethod() { /* 24 branches */ }</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">function bigMethod() { /* split into helpers */ }</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/dropdown.js</td>
+            <td class="font-monospace text-secondary text-nowrap">901:31</td>
+            <td class="code-current"><code class="language-javascript">static dataApiKeydownHandler(event) {</code></td>
+            
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-string-raw">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer String.raw for strings with backslashes</h2>
+      <code class="text-secondary small">unicorn/prefer-string-raw</code>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">1</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>String.raw</code> avoids double-escaping backslashes in template literals, making regex patterns and file paths more readable.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">&quot;\\d+&quot;</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">String.raw`\d+`</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/otp-input.js</td>
+            <td class="font-monospace text-secondary text-nowrap">101:37</td>
+            <td class="code-current"><code class="language-javascript">input.setAttribute('pattern', '\\d*')</code></td>
+            <td class="code-fix"><code class="language-javascript">input.setAttribute('pattern', String.raw`\d*`)</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="unicorn-prefer-query-selector">
+    <div class="card-header bg-light d-flex align-items-center gap-2" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h2 class="h6 fw-semibold flex-grow-1 mb-0">Prefer querySelector over getElementById</h2>
+      <code class="text-secondary small">unicorn/prefer-query-selector</code>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">1</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary"><code>querySelector</code> is more flexible and consistent with other DOM querying methods. It uses CSS selector syntax uniformly.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-javascript">document.getElementById(&quot;myId&quot;)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-javascript">document.querySelector(&quot;#myId&quot;)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">js/src/util/index.js</td>
+            <td class="font-monospace text-secondary text-nowrap">42:21</td>
+            <td class="code-current"><code class="language-javascript">} while (document.getElementById(prefix))</code></td>
+            
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="text-center text-secondary small border-top py-4 mt-4">
+  Generated 2026-02-24 &middot; ESLint 8.57.1 &middot; Bootstrap v6 source (js/src/)
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/prism.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bootstrap v6 — Stylelint SCSS Modernization Report</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/default.min.css">
+<style>
+  /* Only custom CSS for things Bootstrap 5 doesn't provide */
+  .rule-section.collapsed .card-body { display: none; }
+  .rule-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+  .toggle-icon { transition: transform 0.2s; }
+  .code-current { background: #fff5f5; word-break: break-all; }
+  .code-fix { background: #f0fdf4; word-break: break-all; }
+  .pattern-before { background: #fff5f5; border-color: #fecaca; }
+  .pattern-after { background: #f0fdf4; border-color: #bbf7d0; }
+  /* highlight.js overrides for our layout */
+  .pattern-before pre code.hljs,
+  .pattern-after pre code.hljs { background: transparent; padding: 0; }
+  td code.hljs { background: transparent; padding: 0; white-space: pre-wrap; word-break: break-all; font-size: inherit; }
+</style>
+</head>
+<body>
+
+<div class="text-white py-4 px-3" style="background: linear-gradient(135deg, #6f42c1 0%, #d63384 100%);">
+  <div class="container">
+    <h1 class="h3 fw-bold mb-1">Bootstrap v6 — Stylelint SCSS Modernization Report</h1>
+    <p class="opacity-75 mb-3">CSS/SCSS patterns that can be modernized for v6</p>
+    <div class="d-flex gap-3 flex-wrap">
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">136</strong>
+        <small class="text-uppercase opacity-75">Warnings</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">6</strong>
+        <small class="text-uppercase opacity-75">Rules</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">34</strong>
+        <small class="text-uppercase opacity-75">Files affected</small>
+      </div>
+      <div class="bg-white bg-opacity-10 rounded-3 px-3 py-2">
+        <strong class="fs-4 d-block">106</strong>
+        <small class="text-uppercase opacity-75">Files scanned</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle text-secondary text-uppercase small mb-2">Descending specificity</h6>
+        <p class="fs-2 fw-bold text-danger mb-1">59</p>
+        <p class="text-secondary small mb-0"><code class="text-secondary">no-descending-specificity</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle text-secondary text-uppercase small mb-2">Alpha values should use percentage notation</h6>
+        <p class="fs-2 fw-bold text-warning mb-1">38</p>
+        <p class="text-secondary small mb-0"><code class="text-secondary">alpha-value-notation</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle text-secondary text-uppercase small mb-2">:not() should use modern list syntax</h6>
+        <p class="fs-2 fw-bold text-warning mb-1">20</p>
+        <p class="text-secondary small mb-0"><code class="text-secondary">selector-not-notation</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle text-secondary text-uppercase small mb-2">Redundant longhand properties</h6>
+        <p class="fs-2 fw-bold text-success mb-1">9</p>
+        <p class="text-secondary small mb-0"><code class="text-secondary">declaration-block-no-redundant-longhand-properties</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle text-secondary text-uppercase small mb-2">Color functions should use modern syntax</h6>
+        <p class="fs-2 fw-bold text-warning mb-1">7</p>
+        <p class="text-secondary small mb-0"><code class="text-secondary">color-function-notation</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle text-secondary text-uppercase small mb-2">SCSS global functions</h6>
+        <p class="fs-2 fw-bold text-danger mb-1">3</p>
+        <p class="text-secondary small mb-0"><code class="text-secondary">scss/no-global-function-names</code></p>
+      </div>
+    </div>
+  </div>
+</div>
+<h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-2" style="border-color: #6f42c1 !important;">Specificity &amp; Selectors</h2>
+
+  <div class="card mb-4 rule-section" id="no-descending-specificity">
+    <div class="card-header bg-light d-flex align-items-center gap-2 flex-wrap" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h3 class="h6 fw-semibold flex-grow-1 mb-0">Descending specificity — selector ordering issues</h3>
+      <code class="text-secondary small">no-descending-specificity</code>
+      <span class="badge bg-danger text-uppercase small">high impact</span>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">59</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">A selector with lower specificity appears after one with higher specificity targeting the same element. The later rule may not override the earlier one as intended, leading to unexpected styling. This is a common source of "why isn't my CSS working?" bugs.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-scss">.card-body:not(:first-child) { ... }
+.card-body { padding: 1rem; }  /* won't override above */</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-scss">.card-body { padding: 1rem; }  /* general first */
+.card-body:not(:first-child) { ... }  /* specific after */</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_card.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">149:5</td>
+            <td class="code-current"><code class="language-scss">    .card-body,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 102</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_card.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">150:5</td>
+            <td class="code-current"><code class="language-scss">    .card-list {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 102</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_card.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">201:5</td>
+            <td class="code-current"><code class="language-scss">    .card-body,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 102</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_card.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">202:5</td>
+            <td class="code-current"><code class="language-scss">    .card-list {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 102</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_carousel.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">160:3</td>
+            <td class="code-current"><code class="language-scss">  .carousel-control-prev {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 152</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_carousel.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">165:3</td>
+            <td class="code-current"><code class="language-scss">  .carousel-control-next {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 152</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">338:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">356:5</td>
+            <td class="code-current"><code class="language-scss">    &amp;:hover {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">362:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-today] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">370:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-month=&quot;next&quot;] [data-vc-date-btn],</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">371:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-month=&quot;prev&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">376:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-disabled] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">381:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-hover] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">386:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-hover=&quot;first&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">391:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-hover=&quot;last&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">396:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-hover=&quot;first-and-last&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">400:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-selected=&quot;middle&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">406:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-selected] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">412:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-selected=&quot;first&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">419:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-selected=&quot;last&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">426:3</td>
+            <td class="code-current"><code class="language-scss">  [data-vc-date-selected=&quot;first-and-last&quot;] [data-vc-date-btn] {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 330</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">217:3</td>
+            <td class="code-current"><code class="language-scss">  .dialog-body {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 151</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">174:5</td>
+            <td class="code-current"><code class="language-scss">    .show &gt; .nav-link {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 146</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">194:5</td>
+            <td class="code-current"><code class="language-scss">    .nav-link {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 138</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">199:7</td>
+            <td class="code-current"><code class="language-scss">      &amp;:hover,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 146</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">200:7</td>
+            <td class="code-current"><code class="language-scss">      &amp;:focus {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 146</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">206:5</td>
+            <td class="code-current"><code class="language-scss">    .show &gt; .nav-link {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 146</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">219:5</td>
+            <td class="code-current"><code class="language-scss">    &gt; .nav-link,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 138</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">227:5</td>
+            <td class="code-current"><code class="language-scss">    &gt; .nav-link,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 138</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">237:5</td>
+            <td class="code-current"><code class="language-scss">    .nav-item .nav-link {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 146</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_nav.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">237:5</td>
+            <td class="code-current"><code class="language-scss">    .nav-item .nav-link {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 146</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/buttons/_button-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">113:5</td>
+            <td class="code-current"><code class="language-scss">    &gt; [class*=&quot;btn-&quot;],</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 19</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/buttons/_button-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">114:5</td>
+            <td class="code-current"><code class="language-scss">    &gt; .btn-group {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 52</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_prose.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">84:5</td>
+            <td class="code-current"><code class="language-scss">    h1 {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 55</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_prose.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">88:5</td>
+            <td class="code-current"><code class="language-scss">    h2 {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 55</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_prose.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">91:5</td>
+            <td class="code-current"><code class="language-scss">    h3 {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 55</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_prose.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">94:5</td>
+            <td class="code-current"><code class="language-scss">    h4 {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 55</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_prose.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">97:5</td>
+            <td class="code-current"><code class="language-scss">    h5 {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 55</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_prose.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">100:5</td>
+            <td class="code-current"><code class="language-scss">    h6 {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 55</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">310:3</td>
+            <td class="code-current"><code class="language-scss">  code {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 303</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">421:3</td>
+            <td class="code-current"><code class="language-scss">  button,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 414</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">432:3</td>
+            <td class="code-current"><code class="language-scss">  button,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 414</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">466:3</td>
+            <td class="code-current"><code class="language-scss">  button,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 414</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_floating-labels.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">84:7</td>
+            <td class="code-current"><code class="language-scss">      ~ label {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 84</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_floating-labels.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">84:7</td>
+            <td class="code-current"><code class="language-scss">      ~ label {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 84</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_floating-labels.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">111:7</td>
+            <td class="code-current"><code class="language-scss">      ~ label {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 84</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_floating-labels.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">116:5</td>
+            <td class="code-current"><code class="language-scss">    &gt; :disabled ~ label,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 84</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-range.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">57:5</td>
+            <td class="code-current"><code class="language-scss">    &amp;::-webkit-slider-thumb {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 43</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-range.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">84:5</td>
+            <td class="code-current"><code class="language-scss">    &amp;::-moz-range-thumb {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 47</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">82:3</td>
+            <td class="code-current"><code class="language-scss">  .input-group-lg &gt; .form-control,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 36</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">83:3</td>
+            <td class="code-current"><code class="language-scss">  .input-group-lg &gt; .form-select,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 36</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">85:3</td>
+            <td class="code-current"><code class="language-scss">  .input-group-lg &gt; .btn {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 49</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">91:3</td>
+            <td class="code-current"><code class="language-scss">  .input-group-sm &gt; .form-control,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 36</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">92:3</td>
+            <td class="code-current"><code class="language-scss">  .input-group-sm &gt; .form-select,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 36</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">94:3</td>
+            <td class="code-current"><code class="language-scss">  .input-group-sm &gt; .btn {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 49</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_otp-input.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">60:5</td>
+            <td class="code-current"><code class="language-scss">    &amp;.is-invalid .form-control,</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 50</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_otp-input.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">61:5</td>
+            <td class="code-current"><code class="language-scss">    .was-validated &amp;:invalid .form-control {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 54</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_otp-input.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">64:7</td>
+            <td class="code-current"><code class="language-scss">      &amp;:focus {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 54</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_otp-input.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">76:5</td>
+            <td class="code-current"><code class="language-scss">    .form-control {</code></td>
+            <td class="code-fix"><code class="language-scss">Reorder: move before line 50</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+<h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-2" style="border-color: #6f42c1 !important;">Modern CSS Syntax</h2>
+
+  <div class="card mb-4 rule-section" id="alpha-value-notation">
+    <div class="card-header bg-light d-flex align-items-center gap-2 flex-wrap" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h3 class="h6 fw-semibold flex-grow-1 mb-0">Alpha values should use percentage notation</h3>
+      <code class="text-secondary small">alpha-value-notation</code>
+      <span class="badge bg-warning text-dark text-uppercase small">medium impact</span>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">38</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Modern CSS uses percentage for alpha: <code>rgb(0 0 0 / 50%)</code> instead of the legacy decimal <code>0.5</code>. More readable and consistent with other CSS percentage values. Stylelint can auto-fix this — run <code>npx stylelint --fix</code>.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/rgb" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-scss">rgba(0, 0, 0, 0.5)
+color: rgb(255 255 255 / 0.1)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-scss">rgb(0 0 0 / 50%)
+color: rgb(255 255 255 / 10%)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_carousel.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">107:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_carousel.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">116:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_carousel.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">122:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_chip.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">84:18</td>
+            <td class="code-current"><code class="language-scss">        opacity: .9;</code></td>
+            <td class="code-fix"><code class="language-scss">        opacity: 90%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_chip.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">92:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: .65;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 65%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_chip.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">152:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">69:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">90:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">372:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: .5;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 50%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">402:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: .8;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 80%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">26:47</td>
+            <td class="code-current"><code class="language-scss">$dialog-backdrop-bg:            rgba(0, 0, 0, .5) !default;</code></td>
+            <td class="code-fix"><code class="language-scss">$dialog-backdrop-bg:            rgba(0, 0, 0, 50%) !default;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">81:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">85:18</td>
+            <td class="code-current"><code class="language-scss">        opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">        opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">90:18</td>
+            <td class="code-current"><code class="language-scss">        opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">        opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">93:20</td>
+            <td class="code-current"><code class="language-scss">          opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">          opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dropdown.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">144:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_spinner.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">71:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_spinner.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">87:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_toasts.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">55:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_tooltip.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">56:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_transitions.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">9:14</td>
+            <td class="code-current"><code class="language-scss">    opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">    opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/buttons/_button.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">409:56</td>
+            <td class="code-current"><code class="language-scss">    --btn-active-shadow: inset 0 2px 4px rgba(0, 0, 0, .15);</code></td>
+            <td class="code-fix"><code class="language-scss">    --btn-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 15%);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">450:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_chip-input.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">69:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_chip-input.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">72:18</td>
+            <td class="code-current"><code class="language-scss">        opacity: .65;</code></td>
+            <td class="code-fix"><code class="language-scss">        opacity: 65%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-control.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">95:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-control.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">108:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-control.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">265:16</td>
+            <td class="code-current"><code class="language-scss">      opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">      opacity: 100%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_switch.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">79:28</td>
+            <td class="code-current"><code class="language-scss">      &amp;::before { opacity: .4; }</code></td>
+            <td class="code-fix"><code class="language-scss">      &amp;::before { opacity: 40%; }</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/mixins/_backdrop.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">9:21</td>
+            <td class="code-current"><code class="language-scss">  &amp;.fade { opacity: 0; }</code></td>
+            <td class="code-fix"><code class="language-scss">  &amp;.fade { opacity: 0%; }</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">100:46</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, 50%);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">116:46</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5), 0 0 20px rgba(0, 0, 0, .3);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, 50%), 0 0 20px rgba(0, 0, 0, .3);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">116:74</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5), 0 0 20px rgba(0, 0, 0, .3);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5), 0 0 20px rgba(0, 0, 0, 30%);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">132:46</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, 50%);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_color-contrast.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">85:43</td>
+            <td class="code-current"><code class="language-scss">    $test-background: rgba(118, 118, 118, 1); // Same as #767676</code></td>
+            <td class="code-fix"><code class="language-scss">    $test-background: rgba(100%18, 118, 118, 1); // Same as #767676</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/utilities/_api.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">105:20</td>
+            <td class="code-current"><code class="language-scss">          opacity: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">          opacity: 0%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/utilities/_api.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">109:20</td>
+            <td class="code-current"><code class="language-scss">          opacity: .5;</code></td>
+            <td class="code-fix"><code class="language-scss">          opacity: 50%;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/utilities/_api.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">113:20</td>
+            <td class="code-current"><code class="language-scss">          opacity: 1;</code></td>
+            <td class="code-fix"><code class="language-scss">          opacity: 100%;</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="selector-not-notation">
+    <div class="card-header bg-light d-flex align-items-center gap-2 flex-wrap" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h3 class="h6 fw-semibold flex-grow-1 mb-0">:not() should use modern list syntax</h3>
+      <code class="text-secondary small">selector-not-notation</code>
+      <span class="badge bg-warning text-dark text-uppercase small">medium impact</span>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">20</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">CSS Selectors Level 4 allows <code>:not(.a, .b)</code> instead of chaining <code>:not(.a):not(.b)</code>. More readable and equivalent. Supported in all modern browsers (Chrome 88+, Firefox 84+, Safari 14+). Stylelint can auto-fix this.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/CSS/:not" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-scss">:not(.a):not(.b) { ... }
+:not(:first-child):not(:last-child) { ... }</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-scss">:not(.a, .b) { ... }
+:not(:first-child, :last-child) { ... }</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_card.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">102:24</td>
+            <td class="code-current"><code class="language-scss">    &amp;:not(:first-child):not(:last-child) {</code></td>
+            <td class="code-fix"><code class="language-scss">    &amp;:not(:first-child, :last-child) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_card.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">216:26</td>
+            <td class="code-current"><code class="language-scss">      &amp;:not(:first-child):not(:last-child) {</code></td>
+            <td class="code-fix"><code class="language-scss">      &amp;:not(:first-child, :last-child) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/buttons/_button-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">58:39</td>
+            <td class="code-current"><code class="language-scss">    &gt; [class*=&quot;btn-&quot;]:not(:last-child):not(.dropdown-toggle),</code></td>
+            <td class="code-fix"><code class="language-scss">    &gt; [class*=&quot;btn-&quot;]:not(:last-child, .dropdown-toggle),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/buttons/_button-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">124:39</td>
+            <td class="code-current"><code class="language-scss">    &gt; [class*=&quot;btn-&quot;]:not(:last-child):not(.dropdown-toggle),</code></td>
+            <td class="code-fix"><code class="language-scss">    &gt; [class*=&quot;btn-&quot;]:not(:last-child, .dropdown-toggle),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">271:16</td>
+            <td class="code-current"><code class="language-scss">  a:not([href]):not([class]) {</code></td>
+            <td class="code-fix"><code class="language-scss">  a:not([href], [class]) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">457:28</td>
+            <td class="code-current"><code class="language-scss">  [list]:not([type=&quot;date&quot;]):not([type=&quot;datetime-local&quot;]):not([type=&quot;month&quot;]):not([type=&quot;week&quot;]):not([type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+            <td class="code-fix"><code class="language-scss">  [list]:not([type=&quot;date&quot;], [type=&quot;datetime-local&quot;], [type=&quot;month&quot;], [type=&quot;week&quot;], [type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">457:57</td>
+            <td class="code-current"><code class="language-scss">  [list]:not([type=&quot;date&quot;]):not([type=&quot;datetime-local&quot;]):not([type=&quot;month&quot;]):not([type=&quot;week&quot;]):not([type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+            <td class="code-fix"><code class="language-scss">  [list]:not([type=&quot;date&quot;], [type=&quot;datetime-local&quot;], [type=&quot;month&quot;], [type=&quot;week&quot;], [type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">457:77</td>
+            <td class="code-current"><code class="language-scss">  [list]:not([type=&quot;date&quot;]):not([type=&quot;datetime-local&quot;]):not([type=&quot;month&quot;]):not([type=&quot;week&quot;]):not([type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+            <td class="code-fix"><code class="language-scss">  [list]:not([type=&quot;date&quot;], [type=&quot;datetime-local&quot;], [type=&quot;month&quot;], [type=&quot;week&quot;], [type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/content/_reboot.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">457:96</td>
+            <td class="code-current"><code class="language-scss">  [list]:not([type=&quot;date&quot;]):not([type=&quot;datetime-local&quot;]):not([type=&quot;month&quot;]):not([type=&quot;week&quot;]):not([type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+            <td class="code-fix"><code class="language-scss">  [list]:not([type=&quot;date&quot;], [type=&quot;datetime-local&quot;], [type=&quot;month&quot;], [type=&quot;week&quot;], [type=&quot;time&quot;])::-webkit-calendar-picker-indicator {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-control.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">49:23</td>
+            <td class="code-current"><code class="language-scss">      &amp;:not(:disabled):not([readonly]) {</code></td>
+            <td class="code-fix"><code class="language-scss">      &amp;:not(:disabled, [readonly]) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-control.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">128:27</td>
+            <td class="code-current"><code class="language-scss">    &amp;:hover:not(:disabled):not([readonly])::file-selector-button {</code></td>
+            <td class="code-fix"><code class="language-scss">    &amp;:hover:not(:disabled, [readonly])::file-selector-button {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_form-control.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">229:21</td>
+            <td class="code-current"><code class="language-scss">    &amp;:not(:disabled):not([readonly]) {</code></td>
+            <td class="code-fix"><code class="language-scss">    &amp;:not(:disabled, [readonly]) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">118:26</td>
+            <td class="code-current"><code class="language-scss">      &gt; :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating),</code></td>
+            <td class="code-fix"><code class="language-scss">      &gt; :not(:last-child, .dropdown-toggle, .dropdown-menu, .form-floating),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">118:48</td>
+            <td class="code-current"><code class="language-scss">      &gt; :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating),</code></td>
+            <td class="code-fix"><code class="language-scss">      &gt; :not(:last-child, .dropdown-toggle, .dropdown-menu, .form-floating),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">118:68</td>
+            <td class="code-current"><code class="language-scss">      &gt; :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating),</code></td>
+            <td class="code-fix"><code class="language-scss">      &gt; :not(:last-child, .dropdown-toggle, .dropdown-menu, .form-floating),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">127:53</td>
+            <td class="code-current"><code class="language-scss">      &gt; :nth-last-child(n + 3):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating),</code></td>
+            <td class="code-fix"><code class="language-scss">      &gt; :nth-last-child(n + 3):not(.dropdown-toggle, .dropdown-menu, .form-floating),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/forms/_input-group.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">127:73</td>
+            <td class="code-current"><code class="language-scss">      &gt; :nth-last-child(n + 3):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating),</code></td>
+            <td class="code-fix"><code class="language-scss">      &gt; :nth-last-child(n + 3):not(.dropdown-toggle, .dropdown-menu, .form-floating),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/helpers/_visually-hidden.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">5:41</td>
+            <td class="code-current"><code class="language-scss">  .visually-hidden-focusable:not(:focus):not(:focus-within) {</code></td>
+            <td class="code-fix"><code class="language-scss">  .visually-hidden-focusable:not(:focus, :focus-within) {</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/mixins/_forms.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">97:26</td>
+            <td class="code-current"><code class="language-scss">        &amp;:not([multiple]):not([size]),</code></td>
+            <td class="code-fix"><code class="language-scss">        &amp;:not([multiple], [size]),</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/mixins/_visually-hidden.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">35:16</td>
+            <td class="code-current"><code class="language-scss">  &amp;:not(:focus):not(:focus-within) {</code></td>
+            <td class="code-fix"><code class="language-scss">  &amp;:not(:focus, :focus-within) {</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 rule-section" id="color-function-notation">
+    <div class="card-header bg-light d-flex align-items-center gap-2 flex-wrap" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h3 class="h6 fw-semibold flex-grow-1 mb-0">Color functions should use modern syntax</h3>
+      <code class="text-secondary small">color-function-notation</code>
+      <span class="badge bg-warning text-dark text-uppercase small">medium impact</span>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">7</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Modern CSS color functions use space-separated syntax: <code>rgb(255 0 0)</code> instead of <code>rgb(255, 0, 0)</code>. The modern syntax also supports the <code>/ alpha</code> notation: <code>rgb(0 0 0 / 50%)</code>. Stylelint can auto-fix this.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/rgb" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-scss">rgb(255, 0, 0)
+rgba(0, 0, 0, 0.5)
+hsl(120, 100%, 50%)</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-scss">rgb(255 0 0)
+rgb(0 0 0 / 50%)
+hsl(120 100% 50%)</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_dialog.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">26:33</td>
+            <td class="code-current"><code class="language-scss">$dialog-backdrop-bg:            rgba(0, 0, 0, .5) !default;</code></td>
+            <td class="code-fix"><code class="language-scss">$dialog-backdrop-bg:            rgb(0 0 0 / .5) !default;</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/buttons/_button.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">409:42</td>
+            <td class="code-current"><code class="language-scss">    --btn-active-shadow: inset 0 2px 4px rgba(0, 0, 0, .15);</code></td>
+            <td class="code-fix"><code class="language-scss">    --btn-active-shadow: inset 0 2px 4px rgb(0 0 0 / .15);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">100:32</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgb(0 0 0 / .5);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">116:32</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5), 0 0 20px rgba(0, 0, 0, .3);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgb(0 0 0 / .5), 0 0 20px rgb(0 0 0 / .3);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">116:60</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5), 0 0 20px rgba(0, 0, 0, .3);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgb(0 0 0 / .5), 0 0 20px rgb(0 0 0 / .3);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_box-shadow.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">132:32</td>
+            <td class="code-current"><code class="language-scss">          box-shadow: 0 0 10px rgba(0, 0, 0, .5);</code></td>
+            <td class="code-fix"><code class="language-scss">          box-shadow: 0 0 10px rgb(0 0 0 / .5);</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_color-contrast.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">85:23</td>
+            <td class="code-current"><code class="language-scss">    $test-background: rgba(118, 118, 118, 1); // Same as #767676</code></td>
+            <td class="code-fix"><code class="language-scss">    $test-background: rgb(118 118 118 / 1); // Same as #767676</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+<h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-2" style="border-color: #6f42c1 !important;">Code Optimization</h2>
+
+  <div class="card mb-4 rule-section" id="declaration-block-no-redundant-longhand-properties">
+    <div class="card-header bg-light d-flex align-items-center gap-2 flex-wrap" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h3 class="h6 fw-semibold flex-grow-1 mb-0">Redundant longhand properties — use shorthand</h3>
+      <code class="text-secondary small">declaration-block-no-redundant-longhand-properties</code>
+      <span class="badge bg-success text-uppercase small">low impact</span>
+      <span class="badge bg-success text-uppercase small">auto-fixable</span>
+      <span class="badge rounded-pill bg-primary">9</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Multiple longhand properties (<code>padding-top</code>, <code>padding-right</code>, etc.) can be combined into a single shorthand (<code>padding</code>). Reduces code size and improves readability. Stylelint can auto-fix this.</p>
+      <a class="small" href="https://developer.mozilla.org/en-US/docs/Web/CSS/Shorthand_properties" target="_blank">MDN Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-scss">padding-top: 1rem;
+padding-right: 2rem;
+padding-bottom: 1rem;
+padding-left: 2rem;</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-scss">padding: 1rem 2rem;</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">232:5</td>
+            <td class="code-current"><code class="language-scss">    column-gap: .25rem;</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: gap</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">316:5</td>
+            <td class="code-current"><code class="language-scss">    justify-items: center;</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: place-items</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">416:5</td>
+            <td class="code-current"><code class="language-scss">    border-bottom-left-radius: $border-radius;</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: border-radius</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_datepicker.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">423:5</td>
+            <td class="code-current"><code class="language-scss">    border-bottom-left-radius: 0;</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: border-radius</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_offcanvas.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">144:7</td>
+            <td class="code-current"><code class="language-scss">      margin-inline-end: calc(-.5 * var(--offcanvas-padding-x));</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: margin-inline</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_stepper.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">35:7</td>
+            <td class="code-current"><code class="language-scss">      left: calc(-50% - var(--stepper-gap));</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: inset</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_toasts.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">89:7</td>
+            <td class="code-current"><code class="language-scss">      margin-inline-end: calc(-.5 * var(--toast-padding-x));</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: margin-inline</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_utilities.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">138:13</td>
+            <td class="code-current"><code class="language-scss">            padding-inline-end: 1rem;</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: padding-inline</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_utilities.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">152:13</td>
+            <td class="code-current"><code class="language-scss">            padding-inline-end: 1rem;</code></td>
+            <td class="code-fix"><code class="language-scss">Use shorthand: padding-inline</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+<h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-2" style="border-color: #6f42c1 !important;">Sass Modernization</h2>
+
+  <div class="card mb-4 rule-section" id="scss-no-global-function-names">
+    <div class="card-header bg-light d-flex align-items-center gap-2 flex-wrap" role="button" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="toggle-icon text-secondary small">&#9660;</span>
+      <h3 class="h6 fw-semibold flex-grow-1 mb-0">SCSS global functions — use @use modules</h3>
+      <code class="text-secondary small">scss/no-global-function-names</code>
+      <span class="badge bg-danger text-uppercase small">high impact</span>
+      <span class="badge bg-warning text-dark text-uppercase small">manual fix</span>
+      <span class="badge rounded-pill bg-primary">3</span>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary">Dart Sass deprecated global functions like <code>adjust-hue()</code>, <code>saturate()</code>, <code>mix()</code>. The modern Sass module system uses <code>@use "sass:color"</code> then namespaced calls like <code>color.adjust()</code>. Bootstrap v6 can adopt this since node-sass is no longer supported. This prevents namespace collisions and makes dependencies explicit.</p>
+      <a class="small" href="https://sass-lang.com/documentation/modules/color/" target="_blank">Sass Documentation &rarr;</a>
+      <div class="row g-3 my-3">
+        <div class="col-md-6"><div class="pattern-before border rounded-3 p-3"><small class="fw-semibold text-danger text-uppercase d-block mb-2">Before (current)</small><pre class="mb-0"><code class="language-scss">$color: adjust-hue($primary, 15deg);
+$mixed: mix($white, $primary, 80%);</code></pre></div></div>
+        <div class="col-md-6"><div class="pattern-after border rounded-3 p-3"><small class="fw-semibold text-success text-uppercase d-block mb-2">After (modern)</small><pre class="mb-0"><code class="language-scss">@use &quot;sass:color&quot;;
+$color: color.adjust($primary, $hue: 15deg);
+$mixed: color.mix($white, $primary, 80%);</code></pre></div></div>
+      </div>
+      <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0">
+        <thead class="table-light"><tr><th>File</th><th>Line</th><th>Current code</th><th>Suggested fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/_functions.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">22:20</td>
+            <td class="code-current"><code class="language-scss">    } @else if not comparable($prev-num, $num) {</code></td>
+            <td class="code-fix"><code class="language-scss">@use &quot;sass:math&quot; → math.compatible($number1, $number2)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_color-modes.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">21:29</td>
+            <td class="code-current"><code class="language-scss">          --custom-color: #{mix($indigo, $blue, 50%)};</code></td>
+            <td class="code-fix"><code class="language-scss">@use &quot;sass:color&quot; → color.mix($color1, $color2, $weight)</code></td>
+          </tr>
+          <tr>
+            <td class="font-monospace text-primary text-nowrap">scss/tests/mixins/_color-modes.test.scss</td>
+            <td class="font-monospace text-secondary text-nowrap">50:29</td>
+            <td class="code-current"><code class="language-scss">          --custom-color: #{mix($indigo, $blue, 50%)};</code></td>
+            <td class="code-fix"><code class="language-scss">@use &quot;sass:color&quot; → color.mix($color1, $color2, $weight)</code></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+<h2 class="h5 fw-bold mt-4 mb-3 pb-2 border-bottom border-2 border-success">Passed Checks (0 warnings)</h2>
+<div class="alert alert-success">
+  <p class="fw-semibold mb-2">These modernization rules were checked and Bootstrap SCSS is already clean:</p>
+  <ul class="mb-0">
+    <li class="mb-1"><code>media-feature-range-notation</code> &mdash; Media queries should use range syntax</li>
+    <li class="mb-1"><code>shorthand-property-no-redundant-values</code> &mdash; Redundant values in shorthand properties</li>
+    <li class="mb-1"><code>no-duplicate-selectors</code> &mdash; Duplicate selectors in the same file</li>
+    <li class="mb-1"><code>import-notation</code> &mdash; Import notation should use string syntax</li>
+  </ul>
+</div>
+
+<div class="alert alert-info">
+  <p class="fw-semibold mb-1">Quick Fix: 74 of 136 warnings are auto-fixable</p>
+  <p class="text-secondary small mb-2">Run this command to auto-fix what Stylelint can handle:</p>
+  <pre class="bg-dark text-light rounded-3 p-3 mb-2"><code>npx stylelint "scss/**/*.scss" --fix</code></pre>
+  <p class="text-secondary small mb-0">The remaining 62 warnings (specificity issues, Sass module migration) require manual review.</p>
+</div>
+
+</div>
+
+<footer class="text-center text-secondary small border-top py-4 mt-4">
+  Generated 2026-02-24 &middot; Stylelint 16.26.1 &middot; Bootstrap v6 source (scss/)
+</footer>
+
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
